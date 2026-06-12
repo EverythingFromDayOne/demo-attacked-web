@@ -177,6 +177,43 @@
       .panels { grid-template-columns: 1fr; }
       .panel-left { border-right: none; border-bottom: 1px solid #374151; }
     }
+
+    .target-switcher {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 9999;
+    }
+    .target-switcher button {
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .target-switcher .btn-vulnerable {
+      background: #1e293b;
+      color: #fff;
+      border-color: #334155;
+    }
+    .target-switcher .btn-vulnerable.active {
+      background: #fff;
+      color: #1e293b;
+      border-color: #fff;
+    }
+    .target-switcher .btn-protected {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+    .target-switcher .btn-protected.active {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
   </style>
 </head>
 <body>
@@ -204,14 +241,14 @@
       </div>
       <p class="preview-label">This is what your avatar will look like — a normal colored image.</p>
 
-      <a class="btn-download" href="http://localhost:3006/payload.svg" download="payload.svg">
+      <a class="btn-download" href="/payload.svg" download="payload.svg">
         ⬇ Download payload.svg
       </a>
 
       <div class="steps-panel">
         <strong>Attack steps:</strong><br>
         Step 1: Download payload.svg above<br>
-        Step 2: Go to <strong>http://localhost:3005</strong> (ConnectHub)<br>
+        Step 2: Go to <strong>http://localhost:3007</strong> (ConnectHub)<br>
         Step 3: Upload payload.svg as your profile photo<br>
         Step 4: Your profile appears with a teal avatar — looks normal<br>
         Step 5: Wait for victim to open your profile and click "View Full Photo"<br>
@@ -237,7 +274,7 @@
       <div class="counter" id="counter">Cookies stolen: 0</div>
 
       <div id="listening" class="listening">
-        Listening on port 3006...<span class="cursor"></span>
+        Listening on port 3008...<span class="cursor"></span>
       </div>
 
       <div id="entries"></div>
@@ -302,7 +339,7 @@
 
     async function poll() {
       try {
-        var res = await fetch('http://localhost:3006/api/stolen');
+        var res = await fetch('/api/stolen');
         var entries = await res.json();
         renderEntries(entries);
       } catch (err) {
@@ -323,6 +360,23 @@
     loadSvgSource();
     poll();
     setInterval(poll, 1500);
+
+    document.getElementById('btn-vulnerable').addEventListener('click', function () {
+      window.open('http://localhost:3007', '_blank');
+      document.getElementById('btn-vulnerable').classList.add('active');
+      document.getElementById('btn-protected').classList.remove('active');
+    });
+
+    document.getElementById('btn-protected').addEventListener('click', function () {
+      window.open('http://localhost:3009', '_blank');
+      document.getElementById('btn-protected').classList.add('active');
+      document.getElementById('btn-vulnerable').classList.remove('active');
+    });
   </script>
+
+  <div class="target-switcher">
+    <button type="button" class="btn-vulnerable active" id="btn-vulnerable">Vulnerable (:3007)</button>
+    <button type="button" class="btn-protected" id="btn-protected">Protected (:3009)</button>
+  </div>
 </body>
 </html>

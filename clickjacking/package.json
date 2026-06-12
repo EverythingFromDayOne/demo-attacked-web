@@ -1,0 +1,15 @@
+{
+  "name": "clickjacking-demo",
+  "version": "1.0.0",
+  "description": "Clickjacking security education demo — CloudVault file storage",
+  "main": "victim-server.js",
+  "scripts": {
+    "victim": "node victim-server.js",
+    "attacker": "node attacker-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2"
+  }
+}

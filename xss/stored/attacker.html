@@ -114,6 +114,43 @@
       word-break: break-all;
       line-height: 1.6;
     }
+
+    .target-switcher {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 9999;
+    }
+    .target-switcher button {
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .target-switcher .btn-vulnerable {
+      background: #1e293b;
+      color: #fff;
+      border-color: #334155;
+    }
+    .target-switcher .btn-vulnerable.active {
+      background: #fff;
+      color: #1e293b;
+      border-color: #fff;
+    }
+    .target-switcher .btn-protected {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+    .target-switcher .btn-protected.active {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
   </style>
 </head>
 <body>
@@ -201,6 +238,23 @@
 
     poll();
     setInterval(poll, 1500);
+
+    document.getElementById('btn-vulnerable').addEventListener('click', function () {
+      window.open('http://localhost:3001', '_blank');
+      document.getElementById('btn-vulnerable').classList.add('active');
+      document.getElementById('btn-protected').classList.remove('active');
+    });
+
+    document.getElementById('btn-protected').addEventListener('click', function () {
+      window.open('http://localhost:3003', '_blank');
+      document.getElementById('btn-protected').classList.add('active');
+      document.getElementById('btn-vulnerable').classList.remove('active');
+    });
   </script>
+
+  <div class="target-switcher">
+    <button type="button" class="btn-vulnerable active" id="btn-vulnerable">Vulnerable (:3001)</button>
+    <button type="button" class="btn-protected" id="btn-protected">Protected (:3003)</button>
+  </div>
 </body>
 </html>

@@ -12,9 +12,12 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const cors = require('cors');
 
 const app = express();
 const PORT = 3012;
+
+app.use('/api/account', cors({ origin: 'http://localhost:3011', credentials: true }));
 
 const SESSION_VALUE = 'NetBankJohn_csrf_demo_TOKEN';
 const VALID_USER = { username: 'john.doe', password: 'password123' };

