@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Upload XSS — Attack Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #111827;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    .page-header {
+      background: #1f2937;
+      border-bottom: 1px solid #374151;
+      padding: 1.25rem 2rem;
+    }
+
+    .page-header h1 { font-size: 1.25rem; color: #f87171; }
+    .page-header p { font-size: 0.85rem; color: #9ca3af; margin-top: 0.25rem; }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 72px);
+    }
+
+    .panel { padding: 1.75rem; overflow-y: auto; }
+    .panel-left { background: #1a1f2e; border-right: 1px solid #374151; }
+    .panel-right {
+      background: #0a0a0a;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00ff41;
+    }
+
+    .panel h2 { font-size: 1rem; margin-bottom: 1.25rem; color: #f3f4f6; }
+    .panel-right h2 {
+      color: #00ff41;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+    }
+
+    .preview-box {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid #374151;
+      margin-bottom: 0.75rem;
+    }
+
+    .preview-label {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .btn-download {
+      display: inline-block;
+      background: #1e6b6b;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-download:hover { background: #155555; }
+
+    .steps-panel {
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.9;
+      color: #cbd5e1;
+    }
+
+    .steps-panel strong { color: #f3f4f6; }
+
+    .source-label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    pre {
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 1rem;
+      font-size: 0.75rem;
+      color: #4ade80;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 1.5rem;
+    }
+
+    .lesson-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-left: 4px solid #1e6b6b;
+      border-radius: 6px;
+      padding: 1.25rem;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #94a3b8;
+    }
+
+    .lesson-box h3 {
+      color: #1e6b6b;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.75rem;
+    }
+
+    .counter { font-size: 0.9rem; color: #4ade80; margin-bottom: 1.5rem; }
+
+    .listening { font-size: 0.95rem; margin-bottom: 1.5rem; }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 1.1em;
+      background: #00ff41;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .entry {
+      background: #111;
+      border: 1px solid #1a3a1a;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .entry.flash { animation: glow 0.6s ease-out; }
+
+    @keyframes glow {
+      0% { box-shadow: 0 0 20px 4px rgba(0, 255, 65, 0.6); border-color: #00ff41; }
+      100% { box-shadow: none; border-color: #1a3a1a; }
+    }
+
+    .entry .label {
+      color: #facc15;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .entry .cookie-value {
+      color: #00ff41;
+      word-break: break-all;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 900px) {
+      .panels { grid-template-columns: 1fr; }
+      .panel-left { border-right: none; border-bottom: 1px solid #374151; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>SVG Upload XSS — ConnectHub Attack Lab</h1>
+    <p>Upload a malicious SVG avatar. The frontend is clean — the hole is in file-serving policy.</p>
+  </div>
+
+  <div class="panels">
+    <div class="panel panel-left">
+      <h2>Step 1: Craft the Malicious Avatar</h2>
+
+      <div class="preview-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+          <defs>
+            <linearGradient id="previewGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#1e6b6b"/>
+              <stop offset="100%" style="stop-color:#334155"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="120" fill="url(#previewGrad)" rx="60"/>
+          <circle cx="60" cy="48" r="22" fill="rgba(255,255,255,0.25)"/>
+          <ellipse cx="60" cy="95" rx="32" ry="24" fill="rgba(255,255,255,0.2)"/>
+        </svg>
+      </div>
+      <p class="preview-label">This is what your avatar will look like — a normal colored image.</p>
+
+      <a class="btn-download" href="http://localhost:3006/payload.svg" download="payload.svg">
+        ⬇ Download payload.svg
+      </a>
+
+      <div class="steps-panel">
+        <strong>Attack steps:</strong><br>
+        Step 1: Download payload.svg above<br>
+        Step 2: Go to <strong>http://localhost:3005</strong> (ConnectHub)<br>
+        Step 3: Upload payload.svg as your profile photo<br>
+        Step 4: Your profile appears with a teal avatar — looks normal<br>
+        Step 5: Wait for victim to open your profile and click "View Full Photo"<br>
+        Step 6: Their cookie appears on the right →
+      </div>
+
+      <p class="source-label">SVG Source (what's inside the file you're uploading):</p>
+      <pre id="svg-source">Loading...</pre>
+
+      <div class="lesson-box">
+        <h3>Why the frontend is not to blame</h3>
+        ConnectHub's HTML uses &lt;img&gt; tags — browsers sandbox SVG scripts inside &lt;img&gt;.
+        Sarah's profile page has no innerHTML, no reflected params. The code is clean.<br><br>
+        The hole: the server serves /uploads/ as a static directory with no policy.
+        When a browser opens an SVG URL directly (not inside &lt;img&gt;), it's treated as
+        a full document. Scripts run. Same origin applies. Cookies are readable.<br><br>
+        The fix is not a frontend change. It's a one-line server header.
+      </div>
+    </div>
+
+    <div class="panel panel-right">
+      <h2>Step 2: Wait for the Victim</h2>
+      <div class="counter" id="counter">Cookies stolen: 0</div>
+
+      <div id="listening" class="listening">
+        Listening on port 3006...<span class="cursor"></span>
+      </div>
+
+      <div id="entries"></div>
+    </div>
+  </div>
+
+  <script>
+    var knownCount = 0;
+    var flashedIds = new Set();
+
+    function formatTimestamp(iso) {
+      var d = new Date(iso);
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+        pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function renderEntries(entries) {
+      var container = document.getElementById('entries');
+      var listening = document.getElementById('listening');
+
+      document.getElementById('counter').textContent = 'Cookies stolen: ' + entries.length;
+
+      if (entries.length === 0) {
+        listening.style.display = 'block';
+        container.textContent = '';
+        knownCount = 0;
+        return;
+      }
+
+      listening.style.display = 'none';
+
+      if (entries.length > knownCount) {
+        container.textContent = '';
+
+        entries.forEach(function (entry) {
+          var div = document.createElement('div');
+          div.className = 'entry';
+          var entryId = entry.timestamp + entry.cookie;
+
+          if (!flashedIds.has(entryId)) {
+            div.classList.add('flash');
+            flashedIds.add(entryId);
+          }
+
+          var label = document.createElement('div');
+          label.className = 'label';
+          label.textContent = '[COOKIE CAPTURED] ' + formatTimestamp(entry.timestamp);
+
+          var value = document.createElement('div');
+          value.className = 'cookie-value';
+          value.textContent = entry.cookie;
+
+          div.appendChild(label);
+          div.appendChild(value);
+          container.appendChild(div);
+        });
+
+        knownCount = entries.length;
+      }
+    }
+
+    async function poll() {
+      try {
+        var res = await fetch('http://localhost:3006/api/stolen');
+        var entries = await res.json();
+        renderEntries(entries);
+      } catch (err) {
+        console.error('Poll failed:', err);
+      }
+    }
+
+    async function loadSvgSource() {
+      try {
+        var res = await fetch('/payload.svg');
+        var text = await res.text();
+        document.getElementById('svg-source').textContent = text;
+      } catch (err) {
+        document.getElementById('svg-source').textContent = 'Could not load SVG source.';
+      }
+    }
+
+    loadSvgSource();
+    poll();
+    setInterval(poll, 1500);
+  </script>
+</body>
+</html>

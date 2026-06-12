@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reflected XSS — Attacker Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #111827;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    .page-header {
+      background: #1f2937;
+      border-bottom: 1px solid #374151;
+      padding: 1.25rem 2rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.25rem;
+      color: #f87171;
+    }
+
+    .page-header p {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-top: 0.25rem;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: calc(100vh - 72px);
+    }
+
+    .panel {
+      padding: 1.75rem;
+      overflow-y: auto;
+    }
+
+    .panel-left {
+      background: #1a1f2e;
+      border-right: 1px solid #374151;
+    }
+
+    .panel-right {
+      background: #0a0a0a;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00ff41;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      margin-bottom: 1.25rem;
+      color: #f3f4f6;
+    }
+
+    .panel-right h2 {
+      color: #00ff41;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-bottom: 0.35rem;
+      font-weight: 500;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      color: #f3f4f6;
+      font-size: 0.9rem;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid #0d6e6e;
+      border-color: #0d6e6e;
+    }
+
+    .btn-generate {
+      width: 100%;
+      background: #0d6e6e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+
+    .btn-generate:hover { background: #0a5555; }
+
+    .payload-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1.25rem 0 0.75rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.5rem;
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      color: #9ca3af;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .tab.active {
+      background: #0d6e6e;
+      border-color: #0d6e6e;
+      color: #fff;
+    }
+
+    .email-preview {
+      background: #f4f4f5;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .email-preview.visible { display: block; }
+
+    .email-chrome {
+      background: #e5e7eb;
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      border-bottom: 1px solid #d1d5db;
+    }
+
+    .email-meta {
+      background: #fff;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.8rem;
+      color: #374151;
+    }
+
+    .email-meta div { margin-bottom: 0.2rem; }
+    .email-meta strong { color: #111827; }
+
+    .email-body {
+      background: #fff;
+      padding: 1.5rem 1.25rem;
+      color: #1f2937;
+    }
+
+    .email-logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #0d6e6e;
+      margin-bottom: 1rem;
+    }
+
+    .email-body h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      color: #111827;
+    }
+
+    .email-body p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #4b5563;
+      margin-bottom: 1rem;
+    }
+
+    .product-teaser {
+      background: #f0fafa;
+      border: 1px solid #b2dfdb;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .product-teaser .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.4rem 0;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #e0f2f1;
+    }
+
+    .product-teaser .item:last-child { border-bottom: none; }
+
+    .cta-button {
+      display: inline-block;
+      background: #0d6e6e;
+      color: #fff !important;
+      text-decoration: none;
+      padding: 0.85rem 2rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    .email-fine-print {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      margin-top: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .email-fine-print a { color: #9ca3af; }
+
+    .raw-url-box {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .raw-url-box.visible { display: block; }
+
+    .raw-url-box label {
+      color: #f87171;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .raw-url {
+      background: #111827;
+      border: 1px solid #374151;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      color: #4ade80;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      margin-top: 0.35rem;
+      line-height: 1.5;
+    }
+
+    .counter {
+      font-size: 0.9rem;
+      color: #4ade80;
+      margin-bottom: 1.5rem;
+    }
+
+    .listening {
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 1.1em;
+      background: #00ff41;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .entry {
+      background: #111;
+      border: 1px solid #1a3a1a;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .entry.flash {
+      animation: glow 0.6s ease-out;
+    }
+
+    @keyframes glow {
+      0% { box-shadow: 0 0 20px 4px rgba(0, 255, 65, 0.6); border-color: #00ff41; }
+      100% { box-shadow: none; border-color: #1a3a1a; }
+    }
+
+    .entry .label {
+      color: #facc15;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .entry .cookie-value {
+      color: #00ff41;
+      word-break: break-all;
+      font-size: 0.85rem;
+    }
+
+    .attack-steps {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #1a3a1a;
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.8;
+    }
+
+    .attack-steps h3 {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.75rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .attack-steps ol {
+      padding-left: 1.25rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .attack-steps li { margin-bottom: 0.35rem; }
+
+    @media (max-width: 900px) {
+      .panels { grid-template-columns: 1fr; }
+      .panel-left { border-right: none; border-bottom: 1px solid #374151; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>Reflected XSS Attack Lab — ShopNest</h1>
+    <p>Craft a phishing lure, then watch the victim's cookie arrive when they click the malicious search link.</p>
+  </div>
+
+  <div class="panels">
+    <div class="panel panel-left">
+      <h2>Step 1: Craft the Lure</h2>
+
+      <div class="form-group">
+        <label for="search-term">Product / Search Term</label>
+        <input type="text" id="search-term" value="wireless headphones" placeholder="e.g. wireless headphones">
+      </div>
+
+      <div class="form-group">
+        <label for="email-template">Email Template</label>
+        <select id="email-template">
+          <option value="deal">Deal Alert</option>
+          <option value="saved">Saved Search Update</option>
+          <option value="price">Price Drop</option>
+        </select>
+      </div>
+
+      <button class="btn-generate" id="btn-generate" type="button">Generate Phishing Email</button>
+
+      <div class="payload-tabs" id="payload-tabs" style="display:none;">
+        <button class="tab active" data-payload="scriptTag" type="button">Script Tag</button>
+        <button class="tab" data-payload="imgOnerror" type="button">IMG onerror</button>
+      </div>
+
+      <div class="email-preview" id="email-preview">
+        <div class="email-chrome">Inbox — deals@shopnest-alerts.com</div>
+        <div class="email-meta">
+          <div><strong>From:</strong> deals@shopnest-alerts.com</div>
+          <div><strong>Subject:</strong> <span id="email-subject"></span></div>
+          <div><strong>To:</strong> jane.customer@email.com</div>
+        </div>
+        <div class="email-body">
+          <div class="email-logo">ShopNest 🛒</div>
+          <h3 id="email-headline"></h3>
+          <p id="email-intro"></p>
+          <div class="product-teaser" id="product-teaser"></div>
+          <a class="cta-button" id="cta-link" href="#">View Your Results →</a>
+          <p id="email-footer-text"></p>
+          <div class="email-fine-print">
+            You received this email because you have a ShopNest account or opted in to deal alerts.
+            <a href="#">Unsubscribe</a> · <a href="#">Manage Preferences</a> ·
+            ShopNest Inc., 1200 Commerce Blvd, Austin TX 78701
+          </div>
+        </div>
+      </div>
+
+      <div class="raw-url-box" id="raw-url-box">
+        <label>Raw Malicious URL (inspect the ?q= payload)</label>
+        <div class="raw-url" id="raw-url"></div>
+      </div>
+    </div>
+
+    <div class="panel panel-right">
+      <h2>Step 2: Wait for the Victim</h2>
+      <div class="counter" id="counter">Cookies stolen: 0</div>
+
+      <div id="listening" class="listening">
+        Listening on port 3004...<span class="cursor"></span>
+      </div>
+
+      <div id="entries"></div>
+
+      <div class="attack-steps">
+        <h3>Attack Flow</h3>
+        <ol>
+          <li>Generate the phishing email above</li>
+          <li>"Send" it to victim — open <code>http://localhost:3003</code> in another tab</li>
+          <li>Victim clicks the CTA link in the email</li>
+          <li>Server reflects the payload into HTML at <code>/search?q=...</code></li>
+          <li>Browser executes the script — cookie appears here</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let payloads = null;
+    let activePayload = 'scriptTag';
+    let knownCount = 0;
+    const flashedIds = new Set();
+
+    const TEMPLATES = {
+      deal: {
+        subject: function (term) { return '🔥 Flash Deal: ' + term + ' — up to 40% off today only'; },
+        headline: function (term) { return 'Today\'s hottest deal on ' + term; },
+        intro: function (term) {
+          return 'Hi Jane, we spotted a limited-time price drop on items matching "' + term + '". These deals move fast — inventory is selling out across our warehouse network.';
+        },
+        footer: 'Prices valid while supplies last. Free shipping on orders over $50.',
+      },
+      saved: {
+        subject: function (term) { return 'Your saved search "' + term + '" has new results'; },
+        headline: function (term) { return 'New matches for your saved search'; },
+        intro: function (term) {
+          return 'Hi Jane, you asked us to notify you when new products match "' + term + '". We found 5 new listings since your last visit — including items from brands you\'ve browsed before.';
+        },
+        footer: 'You can manage saved searches anytime from your ShopNest account settings.',
+      },
+      price: {
+        subject: function (term) { return 'Price drop alert: ' + term + ' is now cheaper'; },
+        headline: function (term) { return 'Good news — prices dropped on ' + term; },
+        intro: function (term) {
+          return 'Hi Jane, an item on your watchlist for "' + term + '" just dropped in price. Based on your browsing history, we think you\'ll want to see these updated listings before they sell out.';
+        },
+        footer: 'Price tracking is free for ShopNest members. No coupon code required.',
+      },
+    };
+
+    const TEASER_PRODUCTS = [
+      { name: 'Sony WH-1000XM5', price: '$279.99', was: '$349.99' },
+      { name: 'Bose QuietComfort Ultra', price: '$329.00', was: '$429.00' },
+      { name: 'JBL Tune 770NC', price: '$89.95', was: '$129.95' },
+    ];
+
+    function formatTimestamp(iso) {
+      const d = new Date(iso);
+      const pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+        pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function getActiveUrl() {
+      if (!payloads) return '#';
+      return payloads[activePayload].url;
+    }
+
+    function updateEmailPreview() {
+      if (!payloads) return;
+
+      const term = document.getElementById('search-term').value.trim() || 'wireless headphones';
+      const templateKey = document.getElementById('email-template').value;
+      const tmpl = TEMPLATES[templateKey];
+
+      document.getElementById('email-subject').textContent = tmpl.subject(term);
+      document.getElementById('email-headline').textContent = tmpl.headline(term);
+      document.getElementById('email-intro').textContent = tmpl.intro(term);
+      document.getElementById('email-footer-text').textContent = tmpl.footer;
+
+      document.getElementById('product-teaser').innerHTML = TEASER_PRODUCTS.map(function (p) {
+        return '<div class="item"><span>' + p.name + '</span><span><s style="color:#9ca3af">' + p.was + '</s> <strong style="color:#0d6e6e">' + p.price + '</strong></span></div>';
+      }).join('');
+
+      const url = getActiveUrl();
+      const cta = document.getElementById('cta-link');
+      cta.href = url;
+      document.getElementById('raw-url').textContent = url;
+
+      document.getElementById('email-preview').classList.add('visible');
+      document.getElementById('raw-url-box').classList.add('visible');
+      document.getElementById('payload-tabs').style.display = 'flex';
+    }
+
+    async function loadPayloads() {
+      const res = await fetch('/api/payloads');
+      payloads = await res.json();
+    }
+
+    document.getElementById('btn-generate').addEventListener('click', function () {
+      updateEmailPreview();
+    });
+
+    document.querySelectorAll('.tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        activePayload = tab.getAttribute('data-payload');
+        updateEmailPreview();
+      });
+    });
+
+    function renderEntries(entries) {
+      const container = document.getElementById('entries');
+      const listening = document.getElementById('listening');
+
+      document.getElementById('counter').textContent = 'Cookies stolen: ' + entries.length;
+
+      if (entries.length === 0) {
+        listening.style.display = 'block';
+        container.innerHTML = '';
+        knownCount = 0;
+        return;
+      }
+
+      listening.style.display = 'none';
+
+      if (entries.length > knownCount) {
+        container.innerHTML = '';
+
+        entries.forEach(function (entry) {
+          const div = document.createElement('div');
+          div.className = 'entry';
+          const entryId = entry.timestamp + entry.cookie;
+
+          if (!flashedIds.has(entryId)) {
+            div.classList.add('flash');
+            flashedIds.add(entryId);
+          }
+
+          div.innerHTML =
+            '<div class="label">[COOKIE CAPTURED] ' + formatTimestamp(entry.timestamp) + '</div>' +
+            '<div class="cookie-value">' + entry.cookie + '</div>';
+          container.appendChild(div);
+        });
+
+        knownCount = entries.length;
+      }
+    }
+
+    async function poll() {
+      try {
+        const res = await fetch('/api/stolen');
+        const entries = await res.json();
+        renderEntries(entries);
+      } catch (err) {
+        console.error('Poll failed:', err);
+      }
+    }
+
+    loadPayloads().then(function () {
+      poll();
+      setInterval(poll, 1500);
+    });
+  </script>
+</body>
+</html>

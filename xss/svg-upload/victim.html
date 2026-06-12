@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConnectHub — Professional Network</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    .demo-banner {
+      background: #fef3c7;
+      border-bottom: 2px solid #f59e0b;
+      color: #92400e;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .demo-banner strong { font-weight: 700; }
+
+    header {
+      background: #1e6b6b;
+      color: #fff;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+
+    .logo { font-size: 1.3rem; font-weight: 700; }
+
+    nav a {
+      color: rgba(255, 255, 255, 0.88);
+      text-decoration: none;
+      margin: 0 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    nav a:hover { color: #fff; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .avatar-sm {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #0f4f4f;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 30% 70%;
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(30, 107, 107, 0.06);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      color: #1e6b6b;
+      margin-bottom: 1.25rem;
+    }
+
+    .profile-self { text-align: center; }
+
+    .avatar-lg {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #1e6b6b;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 auto 0.75rem;
+    }
+
+    .profile-self h3 { font-size: 1.05rem; margin-bottom: 0.35rem; }
+
+    .badge {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      margin-bottom: 1.25rem;
+    }
+
+    .upload-section {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1.25rem;
+      margin-top: 0.5rem;
+      text-align: left;
+    }
+
+    .upload-section label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #475569;
+    }
+
+    .upload-section input[type="file"] {
+      width: 100%;
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-upload {
+      width: 100%;
+      background: #1e6b6b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.65rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .btn-upload:hover { background: #155555; }
+    .btn-upload:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .upload-hint {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.5rem;
+    }
+
+    .upload-status {
+      font-size: 0.85rem;
+      color: #047857;
+      margin-top: 0.75rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    .upload-status.visible { display: block; }
+
+    .members-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .member-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: box-shadow 0.2s;
+    }
+
+    .member-card:hover {
+      box-shadow: 0 6px 20px rgba(30, 107, 107, 0.1);
+    }
+
+    .member-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .member-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .member-avatar-fallback {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .member-name { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+
+    .member-bio {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 1rem;
+      line-height: 1.45;
+    }
+
+    .view-link {
+      color: #1e6b6b;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .view-link:hover { text-decoration: underline; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 420px;
+      width: 100%;
+      padding: 2rem;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: #94a3b8;
+    }
+
+    .modal-avatar-wrap { text-align: center; margin-bottom: 1.25rem; }
+
+    .modal-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .modal-avatar-fallback {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .modal h3 {
+      font-size: 1.25rem;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-bio {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-since {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .btn-primary {
+      background: #1e6b6b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary:hover { background: #155555; }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .loading {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    ⚠️ Demo: Sarah's session cookie: <strong id="cookie-display"></strong>
+  </div>
+
+  <header>
+    <div class="logo">ConnectHub 🔗</div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Network</a>
+      <a href="#">Jobs</a>
+      <a href="#">Messages</a>
+    </nav>
+    <div class="header-right">
+      <span title="Notifications">🔔</span>
+      <div class="user-chip">
+        <div class="avatar-sm">SC</div>
+        <span>Sarah Chen</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="card profile-self">
+      <h2>Your Profile</h2>
+      <div class="avatar-lg">SC</div>
+      <h3>Sarah Chen</h3>
+      <span class="badge">Member</span>
+
+      <div class="upload-section">
+        <label for="avatar-input">Upload Profile Photo</label>
+        <input type="file" id="avatar-input" accept="image/*,.svg">
+        <button class="btn-upload" id="btn-upload" type="button" disabled>Upload Photo</button>
+        <p class="upload-hint">Supported: JPG, PNG, GIF, SVG</p>
+        <p class="upload-status" id="upload-status">Photo updated!</p>
+      </div>
+    </aside>
+
+    <section class="card">
+      <h2>Community Members</h2>
+      <div class="members-grid" id="members-grid">
+        <p class="loading">Loading members...</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modal-close" type="button" aria-label="Close">✕</button>
+      <div class="modal-avatar-wrap" id="modal-avatar-wrap"></div>
+      <h3 id="modal-name"></h3>
+      <p class="modal-bio" id="modal-bio"></p>
+      <p class="modal-since" id="modal-since"></p>
+      <div class="modal-actions" id="modal-actions"></div>
+    </div>
+  </div>
+
+  <script>
+    var selectedFile = null;
+    var profilesCache = [];
+
+    document.getElementById('cookie-display').textContent =
+      document.cookie || '(none)';
+
+    function getInitial(name) {
+      return name ? name.charAt(0).toUpperCase() : '?';
+    }
+
+    function formatMemberSince(iso) {
+      var d = new Date(iso);
+      return 'Member since ' + d.toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+
+    function createAvatarElement(avatarUrl, name, className) {
+      if (avatarUrl) {
+        var img = document.createElement('img');
+        img.setAttribute('src', avatarUrl);
+        img.setAttribute('alt', name + ' avatar');
+        img.className = className;
+        return img;
+      }
+
+      var fallback = document.createElement('div');
+      fallback.className = className.indexOf('modal') >= 0
+        ? 'modal-avatar-fallback'
+        : 'member-avatar-fallback';
+      fallback.textContent = getInitial(name);
+      return fallback;
+    }
+
+    function renderMembers(profiles) {
+      profilesCache = profiles;
+      var grid = document.getElementById('members-grid');
+      grid.textContent = '';
+
+      if (profiles.length === 0) {
+        var empty = document.createElement('p');
+        empty.className = 'loading';
+        empty.textContent = 'No members yet.';
+        grid.appendChild(empty);
+        return;
+      }
+
+      profiles.forEach(function (profile) {
+        var card = document.createElement('article');
+        card.className = 'member-card';
+
+        var header = document.createElement('div');
+        header.className = 'member-header';
+
+        header.appendChild(
+          createAvatarElement(profile.avatarUrl, profile.username, 'member-avatar')
+        );
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'member-name';
+        nameEl.textContent = profile.username;
+        header.appendChild(nameEl);
+
+        var bioEl = document.createElement('p');
+        bioEl.className = 'member-bio';
+        bioEl.textContent = profile.bio;
+
+        var link = document.createElement('a');
+        link.className = 'view-link';
+        link.textContent = 'View Profile →';
+        link.setAttribute('href', '#');
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          openProfileModal(profile);
+        });
+
+        card.appendChild(header);
+        card.appendChild(bioEl);
+        card.appendChild(link);
+        grid.appendChild(card);
+      });
+    }
+
+    function openProfileModal(profile) {
+      var wrap = document.getElementById('modal-avatar-wrap');
+      wrap.textContent = '';
+      wrap.appendChild(
+        createAvatarElement(profile.avatarUrl, profile.username, 'modal-avatar')
+      );
+
+      document.getElementById('modal-name').textContent = profile.username;
+      document.getElementById('modal-bio').textContent = profile.bio;
+      document.getElementById('modal-since').textContent =
+        formatMemberSince(profile.uploadedAt);
+
+      var actions = document.getElementById('modal-actions');
+      actions.textContent = '';
+
+      if (profile.avatarUrl) {
+        var viewPhotoBtn = document.createElement('button');
+        viewPhotoBtn.className = 'btn-primary';
+        viewPhotoBtn.type = 'button';
+        viewPhotoBtn.textContent = '🔍 View Full Photo';
+        viewPhotoBtn.addEventListener('click', function () {
+          // ⚠️ VULNERABILITY: Opening the raw SVG URL in a new tab renders it as a
+          //    standalone document in the same origin. Scripts inside the SVG execute.
+          //    The <img> tag above is safe — browsers sandbox SVG scripts inside <img>.
+          //    But window.open() removes that sandbox.
+          // ✅ FIX: Never provide a direct link to user-uploaded SVG files.
+          //         Or ensure the server adds Content-Disposition: attachment so the
+          //         browser downloads instead of renders.
+          window.open(profile.avatarUrl, '_blank');
+        });
+        actions.appendChild(viewPhotoBtn);
+      }
+
+      var connectBtn = document.createElement('button');
+      connectBtn.className = 'btn-secondary';
+      connectBtn.type = 'button';
+      connectBtn.textContent = 'Connect';
+      actions.appendChild(connectBtn);
+
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+
+    async function loadProfiles() {
+      try {
+        var res = await fetch('/api/profiles');
+        var profiles = await res.json();
+        renderMembers(profiles);
+      } catch (err) {
+        var grid = document.getElementById('members-grid');
+        grid.textContent = '';
+        var errEl = document.createElement('p');
+        errEl.className = 'loading';
+        errEl.textContent = 'Could not load members.';
+        grid.appendChild(errEl);
+      }
+    }
+
+    document.getElementById('avatar-input').addEventListener('change', function (e) {
+      selectedFile = e.target.files[0] || null;
+      document.getElementById('btn-upload').disabled = !selectedFile;
+    });
+
+    document.getElementById('btn-upload').addEventListener('click', async function () {
+      if (!selectedFile) return;
+
+      var btn = document.getElementById('btn-upload');
+      var status = document.getElementById('upload-status');
+      btn.disabled = true;
+      status.classList.remove('visible');
+
+      var formData = new FormData();
+      formData.append('avatar', selectedFile);
+
+      try {
+        var res = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Upload failed');
+        status.textContent = 'Photo updated! Profile added to community.';
+        status.classList.add('visible');
+        document.getElementById('avatar-input').value = '';
+        selectedFile = null;
+        await loadProfiles();
+      } catch (err) {
+        status.textContent = 'Upload failed. Try again.';
+        status.style.color = '#b91c1c';
+        status.classList.add('visible');
+      }
+
+      btn.disabled = false;
+    });
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-overlay').addEventListener('click', function (e) {
+      if (e.target.id === 'modal-overlay') closeModal();
+    });
+
+    loadProfiles();
+  </script>
+</body>
+</html>

