@@ -1,0 +1,16 @@
+{
+  "name": "ssrf-demo",
+  "version": "1.0.0",
+  "description": "SSRF security education demo — DevShare link preview",
+  "main": "victim-server.js",
+  "scripts": {
+    "victim": "node victim-server.js",
+    "internal": "node internal-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
