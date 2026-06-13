@@ -470,6 +470,7 @@ The same arc repeats across every browser security improvement:
 
 ---
 
+<<<<<<< HEAD
 ## The `Referer` Typo — Why Two Spellings Coexist
 
 The HTTP header is spelled `Referer` (one `r`). The correct English word is `referrer` (two `r`s). This is a 1996 typo in RFC 1945 that became permanent because fixing it would have broken every HTTP implementation on the internet. The working group noticed and chose backward compatibility over correctness.
@@ -494,6 +495,8 @@ The first check (`referer`) is what every modern browser sends. The second (`ref
 
 ---
 
+=======
+>>>>>>> 68c825557fec214a8cf218061641589c4826715d
 ## Attacker Routes
 
 | Route | Purpose |
