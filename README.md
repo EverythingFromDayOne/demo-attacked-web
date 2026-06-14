@@ -23,7 +23,7 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Prompt ready |
 | 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | ✅ Complete |
 | 13 | Command Injection | `command-injection/` | 3037–3039 | ✅ Complete |
-| 14 | IDOR | `idor/` | 3040–3042 | 📋 Prompt ready |
+| 14 | IDOR | `idor/` | 3040–3042 | ✅ Complete |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
 
