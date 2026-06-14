@@ -24,6 +24,8 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | ✅ Complete |
 | 13 | Command Injection | `command-injection/` | 3037–3039 | ✅ Complete |
 | 14 | IDOR | `idor/` | 3040–3042 | ✅ Complete |
+| 15 | Path Traversal | `path-traversal/` | 3043–3045 | ✅ Complete |
+| 16 | Mass Assignment | `mass-assignment/` | 3046–3048 | 📋 Prompt ready |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
 
@@ -105,6 +107,12 @@ Each attack's `README.md` has the exact walkthrough, vulnerable line references,
 | 3040 | IDOR | Vulnerable victim (PayrollHub) |
 | 3041 | IDOR | Attack lab |
 | 3042 | IDOR | Protected victim |
+| 3043 | Path Traversal | Vulnerable victim (FileVault) |
+| 3044 | Path Traversal | Attack guide |
+| 3045 | Path Traversal | Protected victim |
+| 3046 | Mass Assignment | Vulnerable victim (ProfileHub) |
+| 3047 | Mass Assignment | Attack guide |
+| 3048 | Mass Assignment | Protected victim |
 
 All ports are unique. Every demo can run simultaneously.
 
@@ -138,6 +146,12 @@ A single JSON merge request containing `{"__proto__": {"isAdmin": true}}` corrup
 
 ### 12 · JWT Attacks
 Two attack vectors against JSON Web Tokens. The `alg:none` attack exploits servers that read the algorithm from the token header itself — the attacker strips the signature, sets `alg: none`, and the server skips verification entirely. The weak-secret attack brute-forces a common `JWT_SECRET` (`"secret"`) client-side using the Web Crypto API, then re-signs a token with `role: admin`. Fixed by whitelisting `algorithms: ['HS256']` in `jwt.verify()` and generating secrets with `crypto.randomBytes(64)`. → [`jwt-attacks/README.md`](jwt-attacks/README.md)
+
+### 15 · Path Traversal
+`path.join(__dirname, 'uploads', req.query.file)` normalizes the path but does not prevent escape from the uploads directory. `../` sequences are valid — `../../victim-server.js` reads the server's own source code. Fixed by `path.resolve()` + `startsWith(uploadsDir + path.sep)` containment check. The `path.sep` suffix prevents `/uploads-extra/` from passing a `/uploads` check. → [`path-traversal/README.md`](path-traversal/README.md)
+
+### 16 · Mass Assignment
+`Object.assign(user, req.body)` merges every field in the HTTP request body into the user record — including `isAdmin`, which the developer forgot to exclude. Sending `{"bio": "test", "isAdmin": true}` in a profile PATCH escalates any authenticated user to admin. Fixed by an explicit allowlist of user-writable fields. Defense in depth: also strip `isAdmin` from API responses so the attacker can't monitor its value. → [`mass-assignment/README.md`](mass-assignment/README.md)
 
 ### 14 · IDOR (Insecure Direct Object Reference)
 The server checks authentication but not authorization. Payslip IDs are sequential integers — any logged-in employee can read any other employee's salary by incrementing the number in the URL. The automated enumerator fetches all 12 payslips across 4 salary bands in under a second. Fix: add `AND user_id = ?` to every resource query. Returns 404 (not 403) on ownership failure — a 403 would confirm the object exists, leaking information to the attacker. → [`idor/README.md`](idor/README.md)
@@ -199,5 +213,7 @@ demo-attacked/
     ├── event-loop-blocking.md
     ├── jwt-attacks.md
     ├── command-injection.md
-    └── idor.md
+    ├── idor.md
+    ├── path-traversal.md
+    └── mass-assignment.md
 ```

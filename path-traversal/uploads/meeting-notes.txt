@@ -1,0 +1,4 @@
+Meeting Notes — 2026-06-15
+==========================
+Attendees: Alice, Bob, Charlie
+Decision: Launch delayed to Q3.
