@@ -1,0 +1,15 @@
+{
+  "name": "sql-injection-demo",
+  "version": "1.0.0",
+  "description": "SQL injection security education demo — DevLinks",
+  "main": "victim-server.js",
+  "scripts": {
+    "victim": "node victim-server.js",
+    "guide": "node attack-guide-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "express": "^4.18.2"
+  }
+}

