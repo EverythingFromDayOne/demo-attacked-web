@@ -19,8 +19,10 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 7 | SSRF | `ssrf/` | 3019–3021 | ✅ Complete |
 | 8 | NoSQL Injection | `nosql-injection/` | 3022–3024 | ✅ Complete |
 | 9 | SQL Injection | `sql-injection/` | 3025–3027 | ✅ Complete |
-| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | ✅ Complete |
-| 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Planned |
+| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | 📋 Prompt ready |
+| 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Prompt ready |
+| 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | 📋 Prompt ready |
+| 13 | Command Injection | `command-injection/` | 3037–3039 | 📋 Prompt ready |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
 
@@ -93,6 +95,13 @@ Each attack's `README.md` has the exact walkthrough, vulnerable line references,
 | 3032 | Event Loop Blocking | Load tester |
 | 3033 | Event Loop Blocking | Protected server |
 
+| 3034 | JWT Attacks | Vulnerable victim (AuthVault) |
+| 3035 | JWT Attacks | Attack lab |
+| 3036 | JWT Attacks | Protected victim |
+| 3037 | Command Injection | Vulnerable victim (NetProbe) |
+| 3038 | Command Injection | Attack guide |
+| 3039 | Command Injection | Protected victim |
+
 All ports are unique. Every demo can run simultaneously.
 
 ---
@@ -123,8 +132,14 @@ String concatenation into SQL queries lets attackers inject SQL keywords directl
 ### 10 · Prototype Pollution
 A single JSON merge request containing `{"__proto__": {"isAdmin": true}}` corrupts `Object.prototype` for the entire Node.js process. Every subsequent `{}` inherits `isAdmin: true` — the admin gate unlocks for every user, every request, until server restart. Unlike injection attacks scoped to one query or one browser, prototype pollution is process-wide and permanent. Fixed by using `Object.keys()` (own keys only), an explicit `__proto__`/`constructor`/`prototype` blocklist, and `Object.create(null)` for merge targets. → [`prototype-pollution/README.md`](prototype-pollution/README.md)
 
+### 12 · JWT Attacks
+Two attack vectors against JSON Web Tokens. The `alg:none` attack exploits servers that read the algorithm from the token header itself — the attacker strips the signature, sets `alg: none`, and the server skips verification entirely. The weak-secret attack brute-forces a common `JWT_SECRET` (`"secret"`) client-side using the Web Crypto API, then re-signs a token with `role: admin`. Fixed by whitelisting `algorithms: ['HS256']` in `jwt.verify()` and generating secrets with `crypto.randomBytes(64)`. → [`jwt-attacks/README.md`](jwt-attacks/README.md)
+
+### 13 · Command Injection
+User-supplied input is concatenated directly into a shell command via `child_process.exec()`. The OS shell interprets `&`, `;`, `|`, and `$()` as control operators — the attacker appends a second command to a legitimate ping request and gets arbitrary OS-level code execution. A "ping localhost" becomes "ping localhost && cat /etc/passwd". Fixed by switching to `execFile()` (no shell is invoked) plus a hostname allowlist that rejects any character outside `[a-zA-Z0-9\-.]`. → [`command-injection/README.md`](command-injection/README.md)
+
 ### 11 · Event Loop Blocking
-A synchronous CPU-heavy operation (large regex, JSON parse of a huge payload, tight loop) on a single Express endpoint freezes the entire Node.js event loop. Every other request queues behind it — a single attacker request can make the whole server unresponsive for seconds. → [`event-loop-blocking/README.md`](event-loop-blocking/README.md)
+Node.js runs on a single thread. A synchronous CPU loop or a catastrophic ReDoS regex pattern blocks the event loop entirely — no other request can be processed until it finishes. The attack console (port 3032) fires the blocking request and simultaneously polls `/health` on both servers every 500ms, making the freeze visible in real time: the vulnerable server goes dark while the protected server (using `worker_threads`) keeps responding instantly. → [`event-loop-blocking/README.md`](event-loop-blocking/README.md)
 
 ---
 
@@ -162,7 +177,7 @@ demo-attacked/
 │   └── README.md
 ├── sql-injection/
 ├── prototype-pollution/       ← ConfigHub merge demo
-├── event-loop-blocking/       ← planned
+├── event-loop-blocking/       ← DevUtils CPU + ReDoS demo
 └── prompts/                   ← one canonical .md per attack
     ├── xss.md
     ├── csrf.md
@@ -172,5 +187,7 @@ demo-attacked/
     ├── nosql-injection.md
     ├── sql-injection.md
     ├── prototype-pollution.md
-    └── [event-loop-blocking.md — not yet written]
+    ├── event-loop-blocking.md
+    ├── jwt-attacks.md
+    └── command-injection.md
 ```
