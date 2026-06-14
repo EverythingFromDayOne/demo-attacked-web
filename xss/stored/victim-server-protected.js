@@ -19,7 +19,7 @@ const PORT = 3003;
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// ✅ FIX: Content Security Policy as a last-resort layer.
+// ✅ PROTECTED: Content Security Policy as a last-resort layer.
 //    'script-src self' blocks inline scripts and scripts from other origins.
 //    If an XSS payload somehow executes, inline <script> tags and external
 //    script sources are blocked. The onerror= and onload= event handlers
@@ -55,7 +55,7 @@ const tickets = [
   },
 ];
 
-// ✅ FIX: Sanitize at ingestion point — strip HTML tags before storing.
+// ✅ PROTECTED: Sanitize at ingestion point — strip HTML tags before storing.
 //    Defense-in-depth: even if the rendering layer has a bug, the data is clean.
 //    Note: this is NOT a substitute for safe rendering — do both.
 //    Real production: use the 'dompurify' library (server-side via jsdom) or
@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  // ✅ FIX: httpOnly: true — document.cookie cannot read this token.
+  // ✅ PROTECTED: httpOnly: true — document.cookie cannot read this token.
   //    Even if XSS fires, document.cookie returns '' for this field.
   //    The attack runs but the payload is worthless — no session data to exfiltrate.
   res.cookie('agent_session', 'AgentJohn_s3ss10n_t0k3n_XYZ789', { path: '/', httpOnly: true });
@@ -96,7 +96,7 @@ app.post('/api/tickets', (req, res) => {
   res.status(201).json(ticket);
 });
 
-// ✅ FIX: Data is sanitized at write time (POST /api/tickets).
+// ✅ PROTECTED: Data is sanitized at write time (POST /api/tickets).
 //    The GET route returns already-clean data. Rendering layer still uses
 //    textContent (see victim-protected.html) as second line of defense.
 app.get('/api/tickets', (req, res) => {

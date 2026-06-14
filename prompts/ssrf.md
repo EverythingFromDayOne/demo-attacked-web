@@ -347,7 +347,7 @@ function isUrlSafe(rawUrl) {
     return { safe: false, reason: 'Invalid URL format' };
   }
 
-  // ✅ FIX: Only allow http and https. Blocks file://, gopher://, dict://,
+  // ✅ PROTECTED: Only allow http and https. Blocks file://, gopher://, dict://,
   //    ftp://, and other schemes that could be used for SSRF or local file read.
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     return { safe: false, reason: `Scheme "${parsed.protocol}" not allowed — only http/https` };
@@ -355,22 +355,22 @@ function isUrlSafe(rawUrl) {
 
   const host = parsed.hostname.toLowerCase();
 
-  // ✅ FIX: Block loopback addresses (all representations of 127.0.0.1 / ::1)
+  // ✅ PROTECTED: Block loopback addresses (all representations of 127.0.0.1 / ::1)
   if (['localhost', '127.0.0.1', '::1', '0.0.0.0', '[::1]'].includes(host)) {
     return { safe: false, reason: 'Private/loopback address blocked' };
   }
 
-  // ✅ FIX: Block AWS EC2 instance metadata endpoint
+  // ✅ PROTECTED: Block AWS EC2 instance metadata endpoint
   if (host === '169.254.169.254') {
     return { safe: false, reason: 'Cloud metadata endpoint blocked' };
   }
 
-  // ✅ FIX: Block GCP metadata endpoint
+  // ✅ PROTECTED: Block GCP metadata endpoint
   if (host === 'metadata.google.internal') {
     return { safe: false, reason: 'Cloud metadata endpoint blocked' };
   }
 
-  // ✅ FIX: Block RFC-1918 private IP ranges
+  // ✅ PROTECTED: Block RFC-1918 private IP ranges
   const octets = host.split('.').map(Number);
   if (octets.length === 4 && octets.every(n => !isNaN(n))) {
     if (octets[0] === 10) {
@@ -483,5 +483,5 @@ The vulnerability is the absence of URL validation before this call.
 
 ```
 // ⚠️ VULNERABILITY: <what and why>
-// ✅ FIX: <what was changed and why it works>
+// ✅ PROTECTED: <what was changed and why it works>
 ```

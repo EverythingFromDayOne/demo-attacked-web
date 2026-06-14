@@ -61,7 +61,7 @@ const profiles = [
   },
 ];
 
-// ✅ FIX: HttpOnly=true — JavaScript cannot access member_session
+// ✅ PROTECTED: HttpOnly=true — JavaScript cannot access member_session
 app.use((req, res, next) => {
   if (!req.headers.cookie || !req.headers.cookie.includes('member_session=')) {
     res.cookie('member_session', 'MemberSarah_t0k3n_DEF012', { path: '/', httpOnly: true });
@@ -79,7 +79,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// ✅ FIX (layer 1): Extension + mimetype whitelist — blocks honest SVG uploads only.
+// ✅ PROTECTED (layer 1): Extension + mimetype whitelist — blocks honest SVG uploads only.
 //    Attackers can rename payload.svg → payload.jpg and spoof Content-Type: image/jpeg.
 function rasterOnlyFilter(req, file, cb) {
   const ext = path.extname(file.originalname).toLowerCase();
@@ -91,7 +91,7 @@ function rasterOnlyFilter(req, file, cb) {
   cb(null, true);
 }
 
-// ✅ FIX (layer 2): Verify actual file bytes — extension/mimetype alone is not enough.
+// ✅ PROTECTED (layer 2): Verify actual file bytes — extension/mimetype alone is not enough.
 function matchesMagicBytes(buffer) {
   if (buffer.length < 12) return false;
 
@@ -181,7 +181,7 @@ app.post('/api/upload', function (req, res) {
       return res.status(400).json({ error: validationError });
     }
 
-    // ✅ FIX (Layer 3 — definitive polyglot killer):
+    // ✅ PROTECTED (Layer 3 — definitive polyglot killer):
     //    Re-encode through Sharp. Sharp decodes only the pixel data from the input
     //    and writes a brand-new file. All original bytes (EXIF, comments, embedded
     //    scripts, polyglot payloads) are destroyed — the output contains only clean
@@ -227,8 +227,8 @@ app.post('/api/upload', function (req, res) {
   });
 });
 
-// ✅ FIX (Option A): Content-Disposition: attachment — browser downloads instead of rendering
-// ✅ FIX (Option B): CSP blocks script execution even if a hostile file were opened as a document
+// ✅ PROTECTED (Option A): Content-Disposition: attachment — browser downloads instead of rendering
+// ✅ PROTECTED (Option B): CSP blocks script execution even if a hostile file were opened as a document
 app.use('/uploads', function (req, res, next) {
   res.setHeader('Content-Disposition', 'attachment');
   res.setHeader('Content-Security-Policy', "default-src 'none'");

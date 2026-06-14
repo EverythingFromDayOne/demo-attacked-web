@@ -29,7 +29,7 @@ const PRODUCTS = [
 app.use(express.static(path.join(__dirname)));
 
 // ⚠️ VULNERABILITY: HttpOnly omitted — JS can read this cookie
-// ✅ FIX: Set HttpOnly=true so JavaScript cannot access shopper_session
+// ✅ PROTECTED: Set HttpOnly=true so JavaScript cannot access shopper_session
 app.use((req, res, next) => {
   if (!req.headers.cookie || !req.headers.cookie.includes('shopper_session=')) {
     res.setHeader(
@@ -72,7 +72,7 @@ app.get('/search', (req, res) => {
 
   // ⚠️ VULNERABILITY: Server-Side Reflection — payload embedded in HTML before browser
   // receives the response. The browser parses this as legitimate HTML, not injected content.
-  // ✅ FIX: HTML-encode req.query.q before interpolation.
+  // ✅ PROTECTED: HTML-encode req.query.q before interpolation.
   //         '<' becomes '&lt;', '>' becomes '&gt;', '"' becomes '&quot;'
   //         A one-liner: q.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 
@@ -80,7 +80,7 @@ app.get('/search', (req, res) => {
   const resultCount = 5;
 
   // ⚠️ VULNERABILITY: raw req.query.q interpolated into HTML (title + h2 below)
-  // ✅ FIX: use a sanitize function to HTML-encode the value before interpolation
+  // ✅ PROTECTED: use a sanitize function to HTML-encode the value before interpolation
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -88,7 +88,7 @@ app.get('/search', (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- ⚠️ VULNERABILITY: raw req.query.q interpolated into HTML -->
-  <!-- ✅ FIX: use a sanitize function to HTML-encode the value before interpolation -->
+  <!-- ✅ PROTECTED: use a sanitize function to HTML-encode the value before interpolation -->
   <title>ShopNest — Search: ${q}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }

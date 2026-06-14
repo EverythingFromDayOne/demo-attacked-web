@@ -32,14 +32,14 @@ const vaultState = {
   accountPublic: false,
 };
 
-// ✅ FIX (primary): X-Frame-Options tells the browser to refuse rendering this
+// ✅ PROTECTED (primary): X-Frame-Options tells the browser to refuse rendering this
 //    page inside any <iframe>, <frame>, or <object> element.
 //    DENY = no framing by anyone.
 //    SAMEORIGIN = framing allowed only from the same origin.
 app.use(function (req, res, next) {
   res.setHeader('X-Frame-Options', 'DENY');
 
-  // ✅ FIX (modern): CSP frame-ancestors supersedes X-Frame-Options in all
+  // ✅ PROTECTED (modern): CSP frame-ancestors supersedes X-Frame-Options in all
   //    modern browsers. More flexible — can specify multiple allowed origins.
   //    'none' = equivalent to X-Frame-Options: DENY.
   //    'self' = equivalent to X-Frame-Options: SAMEORIGIN.

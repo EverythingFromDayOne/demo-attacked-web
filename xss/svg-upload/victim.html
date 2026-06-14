@@ -528,7 +528,7 @@
           //    standalone document in the same origin. Scripts inside the SVG execute.
           //    The <img> tag above is safe — browsers sandbox SVG scripts inside <img>.
           //    But window.open() removes that sandbox.
-          // ✅ FIX: Never provide a direct link to user-uploaded SVG files.
+          // ✅ PROTECTED: Never provide a direct link to user-uploaded SVG files.
           //         Or ensure the server adds Content-Disposition: attachment so the
           //         browser downloads instead of renders.
           window.open(profile.avatarUrl, '_blank');

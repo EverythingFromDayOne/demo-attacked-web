@@ -210,13 +210,13 @@ Identical CloudVault UI and functionality, with these changes:
 
 **HTTP headers added to every response:**
 ```js
-// ✅ FIX (primary): X-Frame-Options tells the browser to refuse rendering this
+// ✅ PROTECTED (primary): X-Frame-Options tells the browser to refuse rendering this
 //    page inside any <iframe>, <frame>, or <object> element.
 //    DENY = no framing by anyone.
 //    SAMEORIGIN = framing allowed only from the same origin.
 res.setHeader('X-Frame-Options', 'DENY');
 
-// ✅ FIX (modern): CSP frame-ancestors supersedes X-Frame-Options in all
+// ✅ PROTECTED (modern): CSP frame-ancestors supersedes X-Frame-Options in all
 //    modern browsers. More flexible — can specify multiple allowed origins.
 //    'none' = equivalent to X-Frame-Options: DENY.
 //    'self' = equivalent to X-Frame-Options: SAMEORIGIN.
@@ -315,6 +315,6 @@ clickjacking. Only HTTP headers can.
 
 ```
 // ⚠️ VULNERABILITY: <what and why>
-// ✅ FIX: <what was changed and why it works>
+// ✅ PROTECTED: <what was changed and why it works>
 // ❌ FAILED DEFENCE: <why this approach does not work>
 ```

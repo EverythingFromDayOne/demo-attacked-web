@@ -255,7 +255,7 @@ On `POST /transfer`:
 
 Comment explaining why this works:
 ```
-// ✅ FIX: The attacker's forged form has no _csrf field.
+// ✅ PROTECTED: The attacker's forged form has no _csrf field.
 //    The browser's Same-Origin Policy prevents the attacker's page from
 //    reading the real token out of the victim's HTML — it can submit a
 //    form, but it cannot read the page to learn what token to include.
@@ -266,7 +266,7 @@ Comment explaining why this works:
 
 Set the session cookie with `sameSite: 'strict'`:
 ```
-// ✅ FIX: SameSite=Strict — browser will not attach this cookie to any
+// ✅ PROTECTED: SameSite=Strict — browser will not attach this cookie to any
 //    cross-site request, regardless of form method.
 //    Note: on localhost, all ports share the same "site", so this only
 //    demonstrates real protection on separate domains (e.g., evil.com → bank.com).
@@ -344,5 +344,5 @@ correct defence against XSS-based cookie theft; it is irrelevant to CSRF.
 ## Code comments style (match existing XSS demos)
 
 Vulnerable lines: `// ⚠️ VULNERABILITY: <what and why>`
-Fixed lines: `// ✅ FIX: <what was changed and why it works>`
+Fixed lines: `// ✅ PROTECTED: <what was changed and why it works>`
 Explanatory: `// <plain English explaining the security concept>`

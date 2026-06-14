@@ -12,7 +12,7 @@ All HTML as template literals (server files) or static HTML files. Inline CSS on
 
 Code comment standards throughout:
 - Intentional vulnerabilities: `// ⚠️ VULNERABILITY: <what and why>`
-- Fixes: `// ✅ FIX: <what was changed and why it works>`
+- Fixes: `// ✅ PROTECTED: <what was changed and why it works>`
 - No lorem ipsum anywhere — all copy must be realistic SaaS product language.
 
 ---
@@ -88,7 +88,7 @@ An Express server representing the vulnerable helpdesk company.
 - `GET /admin` → serves `admin.html` AND sets a session cookie:
   `agent_session=AgentJohn_s3ss10n_t0k3n_XYZ789; Path=/; HttpOnly=false`
   Comment: `// ⚠️ VULNERABILITY: httpOnly: false — JavaScript can read this cookie via document.cookie`
-  `// ✅ FIX: Set httpOnly: true (see victim-server-protected.js)`
+  `// ✅ PROTECTED: Set httpOnly: true (see victim-server-protected.js)`
 - `POST /api/tickets` → accepts JSON body `{ name, email, subject, message }`.
   Stores in-memory. Does NOT sanitize. Comment:
   `// ⚠️ VULNERABILITY: raw user input stored and later rendered as HTML`
@@ -180,14 +180,14 @@ Terminal 2: cd demo-attacked/xss/stored && npm run attacker
 
 **Fix 1 — Cookie httpOnly: true:**
 ```js
-// ✅ FIX: httpOnly: true — document.cookie cannot read this token.
+// ✅ PROTECTED: httpOnly: true — document.cookie cannot read this token.
 //    Even if XSS fires, document.cookie returns '' for this field.
 res.cookie('agent_session', 'AgentJohn_s3ss10n_t0k3n_XYZ789', { path: '/', httpOnly: true })
 ```
 
 **Fix 2 — Input sanitization before storing:**
 ```js
-// ✅ FIX: Sanitize at ingestion point — strip HTML tags before storing.
+// ✅ PROTECTED: Sanitize at ingestion point — strip HTML tags before storing.
 //    Defense-in-depth: even if the rendering layer has a bug, the data is clean.
 //    Real production: use 'sanitize-html' or 'dompurify' (via jsdom) for allowlists.
 const sanitizeText = (str) => String(str).replace(/<[^>]*>/g, '').trim();
@@ -201,7 +201,7 @@ const ticket = {
 
 **Fix 3 — CSP header on all responses:**
 ```js
-// ✅ FIX: Content Security Policy as last-resort layer.
+// ✅ PROTECTED: Content Security Policy as last-resort layer.
 //    'script-src self' blocks inline scripts and scripts from other origins.
 //    Note: onerror= and onload= event handlers are NOT blocked without 'unsafe-inline'
 //    explicitly denied AND a nonce-based policy. CSP is defense-in-depth, not the primary fix.
@@ -243,7 +243,7 @@ Copy `victim.html` with these changes only:
 
 4. Fix message rendering:
    ```js
-   // ✅ FIX: textContent — browser treats value as plain text, never parses as HTML.
+   // ✅ PROTECTED: textContent — browser treats value as plain text, never parses as HTML.
    //    An XSS payload like <img onerror="..."> is displayed literally as text on screen.
    message.textContent = ticket.message;
    ```
@@ -328,7 +328,7 @@ The reflected value must appear in TWO places:
 ```js
 // ⚠️ VULNERABILITY: Server-Side Reflection — payload embedded in HTML before browser
 // receives the response. The browser parses this as legitimate HTML, not injected content.
-// ✅ FIX: HTML-encode req.query.q before interpolation.
+// ✅ PROTECTED: HTML-encode req.query.q before interpolation.
 `<title>ShopNest — Search: ${q}</title>`
 `<h2>Search results for: ${q}</h2>`
 ```
@@ -519,7 +519,7 @@ with `fs.mkdirSync`.
 File filter: **accept ALL file types including .svg** — do NOT restrict.
 ```js
 // ⚠️ VULNERABILITY: No file type restriction — SVG files accepted as "images"
-// ✅ FIX: Whitelist only safe raster formats: jpg, jpeg, png, gif, webp
+// ✅ PROTECTED: Whitelist only safe raster formats: jpg, jpeg, png, gif, webp
 //         SVG must never be accepted without server-side sanitization
 ```
 
@@ -536,7 +536,7 @@ Filename: timestamp prefix + original filename.
 NO validation of file content. Comment:
 ```js
 // ⚠️ VULNERABILITY: File content not inspected — SVG with <script> stored and served as-is
-// ✅ FIX: For SVGs, parse and strip all <script> tags and event handlers before saving.
+// ✅ PROTECTED: For SVGs, parse and strip all <script> tags and event handlers before saving.
 ```
 
 `GET /api/profiles` → returns all profiles JSON, newest first.
@@ -550,9 +550,9 @@ Pre-seed 3 profiles on startup (null avatarUrl):
 // ⚠️ VULNERABILITY: Uploaded files served with no Content-Disposition or CSP header.
 //    When a browser opens an SVG URL directly, it renders it as a full XML document
 //    with JavaScript execution in the same origin as this server.
-// ✅ FIX (Option A): res.setHeader('Content-Disposition', 'attachment')
+// ✅ PROTECTED (Option A): res.setHeader('Content-Disposition', 'attachment')
 //    Content-Disposition: attachment forces download — browser never executes the SVG.
-// ✅ FIX (Option B): res.setHeader('Content-Security-Policy', "default-src 'none'")
+// ✅ PROTECTED (Option B): res.setHeader('Content-Security-Policy', "default-src 'none'")
 //    Blocks all script execution inside the SVG even when opened as a document.
 app.use('/uploads', express.static(UPLOADS_DIR));
 ```
@@ -621,7 +621,7 @@ Right column (70%) — "Community Members" grid:
   //    standalone document in the same origin. Scripts inside the SVG execute.
   //    The <img> tag above is safe — browsers sandbox SVG scripts inside <img>.
   //    But window.open() removes that sandbox.
-  // ✅ FIX: Never provide a direct link to user-uploaded SVG files.
+  // ✅ PROTECTED: Never provide a direct link to user-uploaded SVG files.
   //         Or ensure the server adds Content-Disposition: attachment.
   window.open(profile.avatarUrl, '_blank')
   ```
@@ -679,7 +679,7 @@ function containsExecutableMarkup(buffer) {
 
 **Layer 3 — Sharp re-encoding (definitive polyglot killer):**
 ```js
-// ✅ FIX (Layer 3 — definitive polyglot killer):
+// ✅ PROTECTED (Layer 3 — definitive polyglot killer):
 //    Re-encode through Sharp. Sharp decodes only the pixel data from the input
 //    and writes a brand-new file. All original bytes (EXIF, comments, embedded
 //    scripts, polyglot payloads) are destroyed — the output contains only clean
@@ -871,7 +871,7 @@ Content-Disposition, serving CSP, and separate CDN domain.
 Apply to all files in demo-attacked/xss/:
 
 - Every intentional vulnerability: `// ⚠️ VULNERABILITY:` with explanation
-- Every fix: `// ✅ FIX:` directly below
+- Every fix: `// ✅ PROTECTED:` directly below
 - No TypeScript — plain JS (CommonJS require syntax for Node)
 - No build step — must run with `node server.js` directly
 - No external CSS frameworks — inline `<style>` blocks only

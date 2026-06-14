@@ -325,7 +325,7 @@ Identical TechBlog UI. Changes:
 
 **The external link:**
 ```html
-<!-- ✅ FIX: rel="noopener" sets window.opener to null in the new tab —
+<!-- ✅ PROTECTED: rel="noopener" sets window.opener to null in the new tab —
      the attacker page cannot read or modify the original tab's location.
      rel="noreferrer" additionally prevents the Referer header from being
      sent, protecting the user's navigation history. -->
@@ -336,7 +336,7 @@ Identical TechBlog UI. Changes:
 
 **Referrer-Policy header** (server-side, defense-in-depth):
 ```js
-// ✅ FIX: Referrer-Policy header as defense-in-depth
+// ✅ PROTECTED: Referrer-Policy header as defense-in-depth
 res.setHeader('Referrer-Policy', 'no-referrer');
 ```
 
@@ -468,5 +468,5 @@ The vulnerability is `rel="opener"`. Replacing with `rel="noopener noreferrer"` 
 
 ```
 // ⚠️ VULNERABILITY: <what and why>
-// ✅ FIX: <what was changed and why it works>
+// ✅ PROTECTED: <what was changed and why it works>
 ```

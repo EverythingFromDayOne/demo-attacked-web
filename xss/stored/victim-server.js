@@ -47,7 +47,7 @@ app.get('/', (req, res) => {
 
 app.get('/admin', (req, res) => {
   // ⚠️ VULNERABILITY: httpOnly: false — JavaScript can read this cookie via document.cookie
-  // ✅ FIX: Set httpOnly: true (see victim-server-protected.js)
+  // ✅ PROTECTED: Set httpOnly: true (see victim-server-protected.js)
   res.cookie('agent_session', 'AgentJohn_s3ss10n_t0k3n_XYZ789', { path: '/', httpOnly: false });
   res.sendFile(path.join(__dirname, 'admin.html'));
 });

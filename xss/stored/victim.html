@@ -262,7 +262,7 @@
         const meta = document.createElement('div');
         meta.className = 'meta';
         // ⚠️ VULNERABILITY (was here): innerHTML with ticket.name — name field also injectable
-        // ✅ FIX applied: textContent used for both name and timestamp
+        // ✅ PROTECTED applied: textContent used for both name and timestamp
         const nameSpan = document.createElement('span');
         nameSpan.className = 'name';
         nameSpan.textContent = ticket.name;

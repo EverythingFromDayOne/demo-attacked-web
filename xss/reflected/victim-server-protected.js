@@ -27,7 +27,7 @@ const PRODUCTS = [
   { id: 6, name: 'Dyson V15 Detect Cordless Vacuum', price: 749.99, category: 'Home', rating: 4.7, imageEmoji: '🧹' },
 ];
 
-// ✅ FIX: HTML-encode user input before interpolating into HTML responses
+// ✅ PROTECTED: HTML-encode user input before interpolating into HTML responses
 function htmlEncode(str) {
   return String(str).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
@@ -36,7 +36,7 @@ function htmlEncode(str) {
 
 app.use(express.static(path.join(__dirname)));
 
-// ✅ FIX: HttpOnly=true — JavaScript cannot access shopper_session
+// ✅ PROTECTED: HttpOnly=true — JavaScript cannot access shopper_session
 app.use((req, res, next) => {
   if (!req.headers.cookie || !req.headers.cookie.includes('shopper_session=')) {
     res.cookie('shopper_session', 'ShopperJane_t0k3n_ABC456', { path: '/', httpOnly: true });
@@ -73,7 +73,7 @@ function buildProductCards() {
 
 app.get('/search', (req, res) => {
   const rawQ = req.query.q || '';
-  // ✅ FIX: encode before any HTML interpolation — reflection is safe, scripts render as text
+  // ✅ PROTECTED: encode before any HTML interpolation — reflection is safe, scripts render as text
   const q = htmlEncode(rawQ);
 
   const productCards = buildProductCards();

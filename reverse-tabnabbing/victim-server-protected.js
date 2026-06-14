@@ -48,7 +48,7 @@ const ARTICLES = {
   },
 };
 
-// ✅ FIX: Referrer-Policy header as defense-in-depth
+// ✅ PROTECTED: Referrer-Policy header as defense-in-depth
 app.use(function (req, res, next) {
   res.setHeader('Referrer-Policy', 'no-referrer');
   next();
@@ -313,7 +313,7 @@ function buildHomeHtml() {
         </h2>
         <div class="article-meta">8 min read · AI &amp; Tools</div>
         <!--
-          ✅ FIX: rel="noopener" sets window.opener to null in the new tab —
+          ✅ PROTECTED: rel="noopener" sets window.opener to null in the new tab —
           the attacker page cannot read or modify the original tab's location.
           rel="noreferrer" additionally prevents the Referer header from being
           sent, protecting the user's navigation history.

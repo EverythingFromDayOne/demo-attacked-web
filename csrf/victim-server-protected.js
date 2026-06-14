@@ -360,7 +360,7 @@ app.post('/api/login', (req, res) => {
     const csrfToken = crypto.randomBytes(32).toString('hex');
     csrfTokens.set(SESSION_VALUE, csrfToken);
 
-    // ✅ FIX: SameSite=Strict — browser will not attach this cookie to any
+    // ✅ PROTECTED: SameSite=Strict — browser will not attach this cookie to any
     //    cross-site request, regardless of form method.
     //    Note: on localhost, all ports share the same "site", so this only
     //    demonstrates real protection on separate domains (e.g., evil.com → bank.com).
@@ -405,7 +405,7 @@ app.post('/transfer', (req, res) => {
   const submitted = req.body._csrf;
   const stored = csrfTokens.get(SESSION_VALUE);
 
-  // ✅ FIX: The attacker's forged form has no _csrf field.
+  // ✅ PROTECTED: The attacker's forged form has no _csrf field.
   //    The browser's Same-Origin Policy prevents the attacker's page from
   //    reading the real token out of the victim's HTML — it can submit a
   //    form, but it cannot read the page to learn what token to include.
@@ -424,7 +424,7 @@ app.post('/transfer', (req, res) => {
   res.json(result);
 });
 
-// ✅ FIX: GET must not mutate state — state-changing GET CSRF is disabled
+// ✅ PROTECTED: GET must not mutate state — state-changing GET CSRF is disabled
 app.get('/transfer-get', (req, res) => {
   res.status(405).json({ error: 'Method not allowed. GET transfers are disabled.' });
 });

@@ -51,7 +51,7 @@ const profiles = [
 ];
 
 // ⚠️ VULNERABILITY: HttpOnly omitted — JS can read this cookie
-// ✅ FIX: Set HttpOnly=true so JavaScript cannot access member_session
+// ✅ PROTECTED: Set HttpOnly=true so JavaScript cannot access member_session
 app.use((req, res, next) => {
   if (!req.headers.cookie || !req.headers.cookie.includes('member_session=')) {
     res.setHeader(
@@ -73,7 +73,7 @@ const storage = multer.diskStorage({
 });
 
 // ⚠️ VULNERABILITY: No file type restriction — SVG files accepted as "images"
-// ✅ FIX: Whitelist only safe raster formats: jpg, jpeg, png, gif, webp
+// ✅ PROTECTED: Whitelist only safe raster formats: jpg, jpeg, png, gif, webp
 //         SVG must never be accepted as a user upload without server-side sanitization
 const upload = multer({
   storage,
@@ -109,7 +109,7 @@ app.post('/api/upload', upload.single('avatar'), (req, res) => {
   }
 
   // ⚠️ VULNERABILITY: File content not inspected — SVG with <script> stored and served as-is
-  // ✅ FIX: For SVGs, parse and strip all <script> tags, event handlers (onload, onerror),
+  // ✅ PROTECTED: For SVGs, parse and strip all <script> tags, event handlers (onload, onerror),
   //         and javascript: hrefs before saving. Or reject SVGs entirely.
 
   const username = req.body.username || 'Alex Rivera';
@@ -132,12 +132,12 @@ app.post('/api/upload', upload.single('avatar'), (req, res) => {
 // ⚠️ VULNERABILITY: Uploaded files served with no Content-Disposition or CSP header.
 //    When a browser opens an SVG URL directly, it renders it as a full XML document
 //    with JavaScript execution in the same origin as this server.
-// ✅ FIX (Option A): app.use('/uploads', (req, res, next) => {
+// ✅ PROTECTED (Option A): app.use('/uploads', (req, res, next) => {
 //      res.setHeader('Content-Disposition', 'attachment');
 //      next();
 //    })
 //    Content-Disposition: attachment forces download — browser never executes the SVG.
-// ✅ FIX (Option B): res.setHeader('Content-Security-Policy', "default-src 'none'")
+// ✅ PROTECTED (Option B): res.setHeader('Content-Security-Policy', "default-src 'none'")
 //    Blocks all script execution inside the SVG even when opened as a document.
 app.use('/uploads', express.static(UPLOADS_DIR));
 

@@ -293,7 +293,7 @@
 
         const message = document.createElement('div');
         message.className = 'message';
-        // ✅ FIX: textContent — browser treats value as plain text, never parses as HTML.
+        // ✅ PROTECTED: textContent — browser treats value as plain text, never parses as HTML.
         //    An XSS payload like <img onerror="..."> is displayed literally as text on screen.
         //    The user sees the angle brackets and script content as characters, not executed code.
         message.textContent = ticket.message;

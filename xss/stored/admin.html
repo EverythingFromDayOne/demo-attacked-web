@@ -244,7 +244,7 @@
 
         const panel = document.createElement('div');
         panel.className = 'expand-panel';
-        // ✅ FIX already applied: panel.textContent = ticket.message
+        // ✅ PROTECTED already applied: panel.textContent = ticket.message
         //    Using textContent instead of innerHTML means the browser treats the value
         //    as plain text — HTML tags are displayed as literal characters, never parsed.
         //    This neutralises the XSS payload stored in ticket.message.
