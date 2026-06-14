@@ -401,6 +401,19 @@ And render a red blocked banner in the UI:
 
 ## README.md
 
+### Attack Flow
+
+```
+Attacker browser ——tells——→ DevShare (3019) ——fetches——→ Internal API (3020)
+                                    ↓
+                      returns internal data back to browser
+
+The browser cannot reach 3020 directly (it's "internal").
+The server can. DevShare becomes an unintentional proxy into its own network.
+
+Real-world target: http://169.254.169.254/ → AWS IAM credentials
+```
+
 ### Port Reference
 
 | Port | Role | File |

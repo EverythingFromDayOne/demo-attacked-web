@@ -505,6 +505,23 @@ the event loop is never blocked.
 
 ## README.md
 
+### Attack Flow
+
+```
+Attacker sends: POST /api/process?input=aaaaaaaaaaaaaaaaaaaaa!
+        ↓
+DevUtils (3031) runs catastrophic ReDoS regex on the main thread
+        ↓
+Event loop blocked — Node.js can process nothing else (10–30 seconds)
+        ↓
+All other users' requests queue behind it → server appears completely down
+
+                    ┌─────────────────────────────────────────┐
+  Protected (3033): │ Regex runs in a worker_thread            │
+                    │ Main thread stays free → /health: 200 OK │
+                    └─────────────────────────────────────────┘
+```
+
 ### Port Reference
 
 | Port | Role | File |

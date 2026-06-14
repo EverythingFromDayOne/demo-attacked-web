@@ -414,6 +414,20 @@ When the victim clicks from the protected server:
 
 ## README.md
 
+### Attack Flow
+
+```
+Victim is on TechBlog (3016), clicks a "Read more →" link (target="_blank")
+        ↓
+New tab opens — controlled by attacker (3017)
+        ↓
+Attacker page runs: window.opener.location = 'http://localhost:3017/phishing'
+        ↓
+Original TechBlog tab silently redirects to a pixel-perfect phishing clone
+        ↓
+Victim sees "session expired" login prompt, enters credentials → stolen
+```
+
 ### Port Reference
 
 | Port | Role | File |

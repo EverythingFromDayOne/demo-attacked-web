@@ -290,6 +290,20 @@ Add a small informational panel below the transfer form:
 
 ## README.md
 
+### Attack Flow
+
+```
+Victim logs into NetBank (3010) ←── session cookie is set by the bank
+        ↓  (victim still logged in, opens attacker's page)
+Attacker page (3011) contains a hidden form auto-submitting to NetBank
+        ↓
+Browser attaches the victim's cookie automatically (same-origin policy ≠ CSRF protection)
+        ↓
+NetBank (3010) receives POST /transfer — looks like a legitimate request
+        ↓
+$9,000 transferred. Victim never clicked anything on the bank's site.
+```
+
 ### Port Reference
 
 | Port | Role | File |

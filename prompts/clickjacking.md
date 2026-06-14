@@ -259,6 +259,20 @@ point: JavaScript cannot defend against clickjacking. Only HTTP headers can.
 
 ## README.md
 
+### Attack Flow
+
+```
+Victim visits attacker's "Claim Your Prize" page (3014)
+        ↓
+Attacker page loads CloudVault (3013) in a transparent, full-page iframe on top
+        ↓
+Victim clicks the visible "Claim Prize" button
+        ↓
+Click lands on CloudVault's "Delete Account" button hidden beneath the iframe
+        ↓
+Account deleted. Victim sees nothing unusual until they try to log in.
+```
+
 ### Port Reference
 
 | Port | Role | File |

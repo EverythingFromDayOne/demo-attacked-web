@@ -10,6 +10,22 @@
 
 ---
 
+## Attack Flow
+
+```
+Attacker sends: PATCH /api/profile
+  { "bio": "hello", "isAdmin": true, "plan": "admin" }
+        ↓
+ProfileHub (3046): Object.assign(req.user, req.body)
+        ↓
+req.user.isAdmin = true  ←  merged from request body without filtering
+        ↓
+Attacker now has admin access. Admin panel unlocks. All user records visible.
+No password change. No privilege escalation UI. Just one HTTP request.
+```
+
+---
+
 ## What this demonstrates
 
 `Object.assign(existingRecord, req.body)` blindly merges every field in the HTTP request body into the user object. If the user model has an `isAdmin` field and the developer forgot to exclude it, any authenticated user can escalate to admin by including `"isAdmin": true` in any profile update.

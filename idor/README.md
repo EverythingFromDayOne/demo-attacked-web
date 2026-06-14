@@ -10,6 +10,23 @@
 
 ---
 
+## Attack Flow
+
+```
+Attacker logs in as alice (user_id = 1)
+        ↓
+Attacker sends: GET /api/payslip/7   ← ID belongs to bob
+        ↓
+PayrollHub (3040): SELECT * FROM payslips WHERE id = 7
+  (no AND user_id = ? check)
+        ↓
+Bob's payslip returned to alice — $92,000 salary exposed
+        ↓
+Enumerate IDs 1–12 → all 4 employees' salaries exposed in < 1 second
+```
+
+---
+
 ## What this demonstrates
 
 The server checks authentication ("are you logged in?") but skips authorization ("do you own this resource?"). Because payslip IDs are sequential integers, an attacker who can see their own payslip at `/api/payslips/1` can read every other employee's payslip by incrementing the number.

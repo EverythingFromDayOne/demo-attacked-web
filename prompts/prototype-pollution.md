@@ -449,6 +449,22 @@ The prototype status indicator stays green.
 
 ## README.md
 
+### Attack Flow
+
+```
+Attacker sends: POST /api/config/merge
+  { "__proto__": { "isAdmin": true } }
+        ↓
+ConfigHub (3028): Object.assign(target, input)
+  → sets Object.prototype.isAdmin = true
+        ↓
+Mutation is process-wide and permanent (until server restart)
+        ↓
+Every {} in the app now inherits isAdmin: true via prototype chain
+        ↓
+Admin panel opens for every user — no login as admin required
+```
+
 ### Port Reference
 
 | Port | Role | File |

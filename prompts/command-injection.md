@@ -482,6 +482,20 @@ Display this error in red below the Run button.
 
 ## README at `command-injection/README.md`
 
+### Attack Flow
+
+```
+Attacker input: "localhost && cat /etc/passwd"
+        ↓
+NetProbe (3037): exec(`ping -n 4 ${hostname}`)
+        ↓
+OS shell receives: ping -n 4 localhost && cat /etc/passwd
+        ↓
+Shell interprets && as "run next command if first succeeds"
+        ↓
+ping runs → succeeds → cat /etc/passwd runs → output returned to attacker
+```
+
 ### What this demonstrates
 
 `child_process.exec()` concatenates a user-supplied string into a shell command. The OS shell interprets `&`, `;`, `|`, and `$()` as control characters — the attacker uses these to append arbitrary commands.

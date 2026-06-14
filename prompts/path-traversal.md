@@ -415,6 +415,20 @@ When traversal is attempted, show in the UI:
 
 ## README at `path-traversal/README.md`
 
+### Attack Flow
+
+```
+Attacker sends: GET /api/download?file=../../victim-server.js
+        ↓
+FileVault (3043): path.join(__dirname, 'uploads', '../../victim-server.js')
+  normalizes to: /path/to/demo-attacked/path-traversal/victim-server.js
+        ↓
+path.join collapses ../ but does NOT verify the result is inside uploads/
+        ↓
+Server reads and returns its own source code
+(On a real system: ../../.env, ../../../../etc/passwd, private keys)
+```
+
 ### What this demonstrates
 
 `path.join(__dirname, 'uploads', userInput)` normalizes the path but does not prevent escape from the `uploads/` directory. `../` sequences are valid path components. The server reads and returns any file the Node.js process can access.

