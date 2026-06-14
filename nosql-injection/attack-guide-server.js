@@ -143,6 +143,7 @@ function buildGuideHtml() {
       font-weight: 600;
       cursor: pointer;
       font-family: 'Courier New', Courier, monospace;
+      min-width: 70px;
     }
     .demo-btn:hover { background: #334155; }
     .demo-btn.primary { background: #0d9488; border-color: #0d9488; color: #fff; }

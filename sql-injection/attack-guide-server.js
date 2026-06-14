@@ -164,6 +164,7 @@ function buildGuideHtml() {
       font-weight: 600;
       cursor: pointer;
       font-family: 'Courier New', Courier, monospace;
+      min-width: 70px;
     }
     .demo-btn:hover { background: #334155; }
     .demo-btn.primary { background: #0d9488; border-color: #0d9488; color: #fff; }
@@ -210,7 +211,7 @@ function buildGuideHtml() {
   <h1>SQL Injection — Attack Guide</h1>
   <p class="subtitle">How string concatenation turns user input into executable SQL</p>
 
-  <div class="flow-box" style="max-width:50vw">
+  <div class="flow-box" style="max-width:900px">
     <strong>THE VULNERABLE PATTERN</strong><br><br>
     <pre>-- Developer intended:
 SELECT * FROM resources WHERE title LIKE '%javascript%'
@@ -223,7 +224,7 @@ WHERE title LIKE '%' UNION SELECT id,username,password,email FROM users--%'
 -- attacker now sees usernames and passwords in the search results</pre>
   </div>
 
-  <div class="flow-box" style="max-width:50vw">
+  <div class="flow-box" style="max-width:900px">
     <strong>LOGIN BYPASS</strong><br><br>
     <pre>-- Developer intended:
 SELECT * FROM users WHERE username = 'admin' AND password = 'wrongpassword'

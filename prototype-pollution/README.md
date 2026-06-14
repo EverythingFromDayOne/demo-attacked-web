@@ -1,0 +1,93 @@
+# Prototype Pollution Attack Demo — ConfigHub
+
+## Port Reference
+
+| Port | Role | File |
+|------|------|------|
+| 3028 | Vulnerable ConfigHub | `victim-server.js` |
+| 3029 | Attack guide | `attack-guide-server.js` |
+| 3030 | Protected ConfigHub | `victim-server-protected.js` |
+
+---
+
+## How to Run
+
+```bash
+cd demo-attacked/prototype-pollution
+npm install
+```
+
+Three terminals:
+
+```
+npm run victim           # :3028
+npm run guide            # :3029
+npm run victim-protected # :3030
+```
+
+---
+
+## Attack Walkthrough
+
+**Terminal 1:** `npm run victim`  
+**Terminal 2:** `npm run guide`
+
+1. Open **localhost:3028** — note the prototype status indicator (🟢 clean)
+2. Open **localhost:3028/admin** — access denied
+3. In the Merge Workbench, set Patch to:
+   ```json
+   { "__proto__": { "isAdmin": true, "role": "superadmin" } }
+   ```
+4. Click `Merge →`
+5. Watch the prototype status indicator flip to 🔴 POLLUTED
+6. Open **localhost:3028/admin** again — admin panel is now unlocked
+7. Open a new tab to **localhost:3028** — any request now has `isAdmin: true`
+
+---
+
+## Protected Demo
+
+1. Open **localhost:3030** — send the same `__proto__` payload via Merge Workbench
+2. Prototype status stays 🟢 clean
+3. Visit **localhost:3030/admin** — access remains denied
+
+---
+
+## Vulnerable Lines
+
+```js
+// The recursive merge writes to Object.prototype when key === '__proto__'
+function merge(target, source) {
+  for (const key in source) {
+    if (typeof source[key] === 'object' && source[key] !== null) {
+      if (!target[key]) target[key] = {};
+      merge(target[key], source[key]);  // ← pollution happens here
+    } else {
+      target[key] = source[key];
+    }
+  }
+}
+```
+
+---
+
+## The Fix
+
+Three defenses combined:
+
+1. `Object.keys(source)` instead of `for...in` — own keys only
+2. Explicit blocklist: skip `__proto__`, `constructor`, `prototype`
+3. `Object.create(null)` for intermediate objects — no prototype to pollute
+
+Any one of the three alone is sufficient. All three together is defense in depth.
+
+---
+
+## Why This Is Dangerous
+
+Unlike SQL injection (one query) or XSS (one user's browser), prototype pollution
+is **process-wide and permanent until server restart**. One request from one
+attacker breaks authentication for every user on the server simultaneously.
+
+This is why supply-chain attacks that introduce prototype pollution in npm
+packages (lodash `merge`, jQuery `extend`, `qs`) are considered critical severity.

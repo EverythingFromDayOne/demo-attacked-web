@@ -1,0 +1,14 @@
+{
+  "name": "prototype-pollution-demo",
+  "version": "1.0.0",
+  "description": "Prototype pollution security education demo — ConfigHub",
+  "main": "victim-server.js",
+  "scripts": {
+    "victim": "node victim-server.js",
+    "guide": "node attack-guide-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

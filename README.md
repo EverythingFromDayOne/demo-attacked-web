@@ -18,8 +18,8 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 6 | Reverse Tabnabbing | `reverse-tabnabbing/` | 3016–3018 | ✅ Complete |
 | 7 | SSRF | `ssrf/` | 3019–3021 | ✅ Complete |
 | 8 | NoSQL Injection | `nosql-injection/` | 3022–3024 | ✅ Complete |
-| 9 | SQL Injection | `sql-injection/` | 3025–3027 | 📋 Planned |
-| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | 📋 Planned |
+| 9 | SQL Injection | `sql-injection/` | 3025–3027 | ✅ Complete |
+| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | ✅ Complete |
 | 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Planned |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
@@ -121,7 +121,7 @@ MongoDB query operators (`$gt`, `$ne`, `$regex`) injected into a JSON login body
 String concatenation into SQL queries lets attackers inject SQL keywords directly. Two vectors: UNION attack on a search field dumps the entire users table; login bypass with `admin'--` comments out the password check entirely. Stopped by parameterized queries (`?` placeholders in `better-sqlite3`) — query structure is compiled before values are bound; a `'` in a parameter is just a character, not a delimiter. → [`sql-injection/README.md`](sql-injection/README.md)
 
 ### 10 · Prototype Pollution
-A malicious JSON payload with `__proto__` or `constructor.prototype` keys corrupts `Object.prototype` for the entire Node.js process. All subsequent objects inherit the attacker's properties — privilege escalation without touching the auth system. → [`prototype-pollution/README.md`](prototype-pollution/README.md)
+A single JSON merge request containing `{"__proto__": {"isAdmin": true}}` corrupts `Object.prototype` for the entire Node.js process. Every subsequent `{}` inherits `isAdmin: true` — the admin gate unlocks for every user, every request, until server restart. Unlike injection attacks scoped to one query or one browser, prototype pollution is process-wide and permanent. Fixed by using `Object.keys()` (own keys only), an explicit `__proto__`/`constructor`/`prototype` blocklist, and `Object.create(null)` for merge targets. → [`prototype-pollution/README.md`](prototype-pollution/README.md)
 
 ### 11 · Event Loop Blocking
 A synchronous CPU-heavy operation (large regex, JSON parse of a huge payload, tight loop) on a single Express endpoint freezes the entire Node.js event loop. Every other request queues behind it — a single attacker request can make the whole server unresponsive for seconds. → [`event-loop-blocking/README.md`](event-loop-blocking/README.md)
@@ -160,8 +160,8 @@ demo-attacked/
 │   └── README.md
 ├── nosql-injection/
 │   └── README.md
-├── sql-injection/             ← prompt written, pending build
-├── prototype-pollution/       ← planned
+├── sql-injection/
+├── prototype-pollution/       ← ConfigHub merge demo
 ├── event-loop-blocking/       ← planned
 └── prompts/                   ← one canonical .md per attack
     ├── xss.md
@@ -171,5 +171,6 @@ demo-attacked/
     ├── ssrf.md
     ├── nosql-injection.md
     ├── sql-injection.md
-    └── [prototype-pollution.md, event-loop-blocking.md — not yet written]
+    ├── prototype-pollution.md
+    └── [event-loop-blocking.md — not yet written]
 ```
