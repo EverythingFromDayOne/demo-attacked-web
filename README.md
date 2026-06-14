@@ -19,8 +19,8 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 7 | SSRF | `ssrf/` | 3019–3021 | ✅ Complete |
 | 8 | NoSQL Injection | `nosql-injection/` | 3022–3024 | ✅ Complete |
 | 9 | SQL Injection | `sql-injection/` | 3025–3027 | ✅ Complete |
-| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | 📋 Prompt ready |
-| 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Prompt ready |
+| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | ✅ Complete |
+| 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | ✅ Complete |
 | 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | ✅ Complete |
 | 13 | Command Injection | `command-injection/` | 3037–3039 | ✅ Complete |
 | 14 | IDOR | `idor/` | 3040–3042 | ✅ Complete |
