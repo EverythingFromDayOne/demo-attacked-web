@@ -25,7 +25,7 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 13 | Command Injection | `command-injection/` | 3037–3039 | ✅ Complete |
 | 14 | IDOR | `idor/` | 3040–3042 | ✅ Complete |
 | 15 | Path Traversal | `path-traversal/` | 3043–3045 | ✅ Complete |
-| 16 | Mass Assignment | `mass-assignment/` | 3046–3048 | 📋 Prompt ready |
+| 16 | Mass Assignment | `mass-assignment/` | 3046–3048 | ✅ Complete |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
 
