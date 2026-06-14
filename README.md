@@ -21,7 +21,7 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 9 | SQL Injection | `sql-injection/` | 3025–3027 | ✅ Complete |
 | 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | 📋 Prompt ready |
 | 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Prompt ready |
-| 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | 📋 Prompt ready |
+| 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | ✅ Complete |
 | 13 | Command Injection | `command-injection/` | 3037–3039 | 📋 Prompt ready |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
@@ -178,6 +178,7 @@ demo-attacked/
 ├── sql-injection/
 ├── prototype-pollution/       ← ConfigHub merge demo
 ├── event-loop-blocking/       ← DevUtils CPU + ReDoS demo
+├── jwt-attacks/                 ← AuthVault JWT forgery demo
 └── prompts/                   ← one canonical .md per attack
     ├── xss.md
     ├── csrf.md

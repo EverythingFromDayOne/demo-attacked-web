@@ -284,6 +284,42 @@ Used by the attacker dashboard.
 
 ### GET /dashboard — Attacker control panel
 
+**CSS requirements — this page is the canonical source that all other attack guides in the lab copy their styles from. Get it right here and every other guide inherits it correctly.**
+
+```css
+/* Required CSS — do not deviate */
+body {
+  background: #0a0a0a;
+  color: #00ff41;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 2rem;
+  margin: 0;
+  /* NO max-width. NO centering. Full width. */
+}
+.flow-box {
+  background: #0d1a0d;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  /* NO max-width — panels are always full width inside body padding */
+}
+.credentials-panel {
+  background: #050f05;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+  /* NO max-width */
+}
+```
+
+Only `<p>` text elements and `<input>` fields may use `max-width` for line-length readability. Never put `max-width` on `.flow-box`, `.credentials-panel`, or any top-level container div.
+
 Dark terminal aesthetic. Shows:
 - Title: "Reverse Tabnabbing Attack Lab"
 - Attack flow explanation (numbered steps)

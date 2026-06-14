@@ -589,7 +589,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       border: 1px solid #1a3a1a;
       border-radius: 8px;
       padding: 1.5rem;
-      max-width: 900px;
     }
     .credentials-panel h2 {
       font-size: 0.95rem;
@@ -630,7 +629,6 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       border: 1px solid #1a3a1a;
       border-radius: 8px;
       padding: 1.5rem;
-      max-width: 900px;
       margin-top: 2rem;
     }
     .referer-panel h2 {

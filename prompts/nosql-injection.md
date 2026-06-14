@@ -11,7 +11,7 @@
 **Attacker/guide pages — non-negotiable rules:**
 - Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
-- Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block).
+- Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block). These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
 
 ## Context
@@ -365,14 +365,14 @@ document.getElementById('btn-switcher-protected').addEventListener('click', func
   <h1>NoSQL Injection — Attack Guide</h1>
   <p class="subtitle">How operator injection bypasses MongoDB authentication</p>
 
-  <div class="flow-box" style="max-width:900px">
+  <div class="flow-box">
     <strong>HOW MONGODB LOGIN QUERIES WORK</strong><br><br>
     <pre>// Normal login — what the developer intended
 db.users.findOne({ username: "alice", password: "hunter2" })
 // → returns user object only if both fields match exactly</pre>
   </div>
 
-  <div class="flow-box" style="max-width:900px">
+  <div class="flow-box">
     <strong>THE INJECTION</strong><br><br>
     <pre>// What the attacker sends (HTTP request body):
 { "username": "admin", "password": { "$gt": "" } }
