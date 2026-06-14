@@ -10,18 +10,19 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 
 | # | Attack | Folder | Ports | Status |
 |---|--------|--------|-------|--------|
-| 1 | Stored XSS | `xss/stored/` | 3001–3003 | ✅ Complete |
-| 2 | Reflected XSS | `xss/reflected/` | 3004–3006 | ✅ Complete |
-| 3 | SVG Upload XSS | `xss/svg-upload/` | 3007–3009 | ✅ Complete |
+| 1 | Stored XSS | `xss/stored/` | 3001, 3002, 3009 | ✅ Complete |
+| 2 | Reflected XSS | `xss/reflected/` | 3003, 3004, 3008 | ✅ Complete |
+| 3 | SVG Upload XSS | `xss/svg-upload/` | 3005, 3006, 3007 | ✅ Complete |
 | 4 | CSRF | `csrf/` | 3010–3012 | ✅ Complete |
-| 5 | Clickjacking | `clickjacking/` | 3013–3015 | 🔧 In progress |
-| 6 | Reverse Tabnabbing | `reverse-tabnabbing/` | 3016–3018 | 📋 Planned |
-| 7 | SSRF | `ssrf/` | 3019–3021 | 📋 Planned |
-| 8 | NoSQL Injection | `nosql-injection/` | 3022–3024 | 📋 Planned |
-| 9 | Prototype Pollution | `prototype-pollution/` | 3025–3027 | 📋 Planned |
-| 10 | Event Loop Blocking | `event-loop-blocking/` | 3028–3030 | 📋 Planned |
+| 5 | Clickjacking | `clickjacking/` | 3013–3015 | ✅ Complete |
+| 6 | Reverse Tabnabbing | `reverse-tabnabbing/` | 3016–3018 | ✅ Complete |
+| 7 | SSRF | `ssrf/` | 3019–3021 | ✅ Complete |
+| 8 | NoSQL Injection | `nosql-injection/` | 3022–3024 | ✅ Complete |
+| 9 | SQL Injection | `sql-injection/` | 3025–3027 | 📋 Planned |
+| 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | 📋 Planned |
+| 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Planned |
 
-Each attack block uses 3 consecutive ports: `vulnerable victim → attacker → protected victim`.
+Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
 
 ---
 
@@ -60,34 +61,37 @@ Each attack's `README.md` has the exact walkthrough, vulnerable line references,
 |------|--------|------|
 | 3001 | Stored XSS | Vulnerable victim (NovaCRM) |
 | 3002 | Stored XSS | Attacker collector |
-| 3003 | Stored XSS | Protected victim |
-| 3004 | Reflected XSS | Vulnerable victim (ShopNest) |
-| 3005 | Reflected XSS | Attacker collector |
-| 3006 | Reflected XSS | Protected victim |
-| 3007 | SVG Upload XSS | Vulnerable victim (ConnectHub) |
-| 3008 | SVG Upload XSS | Attacker collector |
-| 3009 | SVG Upload XSS | Protected victim |
+| 3003 | Reflected XSS | Vulnerable victim (ShopNest) |
+| 3004 | Reflected XSS | Attacker collector |
+| 3005 | SVG Upload XSS | Vulnerable victim (ConnectHub) |
+| 3006 | SVG Upload XSS | Attacker collector |
+| 3007 | SVG Upload XSS | Protected victim |
+| 3008 | Reflected XSS | Protected victim |
+| 3009 | Stored XSS | Protected victim |
 | 3010 | CSRF | Vulnerable victim (NetBank) |
 | 3011 | CSRF | Attacker lure + dashboard |
 | 3012 | CSRF | Protected victim |
-| 3013 | Clickjacking | Vulnerable victim |
-| 3014 | Clickjacking | Attacker overlay |
+| 3013 | Clickjacking | Vulnerable victim (CloudVault) |
+| 3014 | Clickjacking | Attacker overlay (CloudBoost) |
 | 3015 | Clickjacking | Protected victim |
-| 3016 | Reverse Tabnabbing | Vulnerable victim |
-| 3017 | Reverse Tabnabbing | Attacker page |
+| 3016 | Reverse Tabnabbing | Vulnerable victim (TechBlog) |
+| 3017 | Reverse Tabnabbing | Attacker page + phishing clone |
 | 3018 | Reverse Tabnabbing | Protected victim |
-| 3019 | SSRF | Vulnerable victim |
-| 3020 | SSRF | Internal service (simulated) |
+| 3019 | SSRF | Vulnerable victim (DevShare) |
+| 3020 | SSRF | Internal API (attack target) |
 | 3021 | SSRF | Protected victim |
-| 3022 | NoSQL Injection | Vulnerable victim |
-| 3023 | NoSQL Injection | Attacker dashboard |
+| 3022 | NoSQL Injection | Vulnerable victim (DevAuth) |
+| 3023 | NoSQL Injection | Attack guide |
 | 3024 | NoSQL Injection | Protected victim |
-| 3025 | Prototype Pollution | Vulnerable victim |
-| 3026 | Prototype Pollution | Attacker payload server |
-| 3027 | Prototype Pollution | Protected victim |
-| 3028 | Event Loop Blocking | Vulnerable server |
-| 3029 | Event Loop Blocking | Load tester |
-| 3030 | Event Loop Blocking | Protected server |
+| 3025 | SQL Injection | Vulnerable victim (DevLinks) |
+| 3026 | SQL Injection | Attack guide |
+| 3027 | SQL Injection | Protected victim |
+| 3028 | Prototype Pollution | Vulnerable victim |
+| 3029 | Prototype Pollution | Attacker payload server |
+| 3030 | Prototype Pollution | Protected victim |
+| 3031 | Event Loop Blocking | Vulnerable server |
+| 3032 | Event Loop Blocking | Load tester |
+| 3033 | Event Loop Blocking | Protected server |
 
 All ports are unique. Every demo can run simultaneously.
 
@@ -111,12 +115,15 @@ A page opens a link with `target="_blank"`. The new tab (attacker-controlled) ac
 User input controls a URL that the server fetches. The attacker supplies an internal address (`http://169.254.169.254/`, `http://localhost:9200/`) that the browser could never reach but the server can. The server becomes a proxy into its own internal network. → [`ssrf/README.md`](ssrf/README.md)
 
 ### 8 · NoSQL Injection
-MongoDB query operators (`$ne`, `$gt`, `$regex`) injected into a JSON login body bypass authentication entirely. `{ "password": { "$ne": "" } }` matches every user. Stopped by input validation and ODM schema enforcement. → [`nosql-injection/README.md`](nosql-injection/README.md)
+MongoDB query operators (`$gt`, `$ne`, `$regex`) injected into a JSON login body bypass authentication entirely. `{ "password": { "$gt": "" } }` evaluates to true for every user. Only works on JSON endpoints — form-encoded requests cannot send nested objects. The critical implementation detail: the browser's form submit handler must `JSON.parse()` the typed value before serializing, otherwise operators arrive as literal strings and the attack fails silently. Stopped by enforcing `typeof password === 'string'` before querying. → [`nosql-injection/README.md`](nosql-injection/README.md)
 
-### 9 · Prototype Pollution
+### 9 · SQL Injection
+String concatenation into SQL queries lets attackers inject SQL keywords directly. Two vectors: UNION attack on a search field dumps the entire users table; login bypass with `admin'--` comments out the password check entirely. Stopped by parameterized queries (`?` placeholders in `better-sqlite3`) — query structure is compiled before values are bound; a `'` in a parameter is just a character, not a delimiter. → [`sql-injection/README.md`](sql-injection/README.md)
+
+### 10 · Prototype Pollution
 A malicious JSON payload with `__proto__` or `constructor.prototype` keys corrupts `Object.prototype` for the entire Node.js process. All subsequent objects inherit the attacker's properties — privilege escalation without touching the auth system. → [`prototype-pollution/README.md`](prototype-pollution/README.md)
 
-### 10 · Event Loop Blocking
+### 11 · Event Loop Blocking
 A synchronous CPU-heavy operation (large regex, JSON parse of a huge payload, tight loop) on a single Express endpoint freezes the entire Node.js event loop. Every other request queues behind it — a single attacker request can make the whole server unresponsive for seconds. → [`event-loop-blocking/README.md`](event-loop-blocking/README.md)
 
 ---
@@ -146,10 +153,23 @@ demo-attacked/
 ├── csrf/
 │   └── README.md
 ├── clickjacking/
+│   └── README.md
 ├── reverse-tabnabbing/
+│   └── README.md
 ├── ssrf/
+│   └── README.md
 ├── nosql-injection/
-├── prototype-pollution/
-├── event-loop-blocking/
-└── prompts/                   ← Cursor prompts used to build each demo
+│   └── README.md
+├── sql-injection/             ← prompt written, pending build
+├── prototype-pollution/       ← planned
+├── event-loop-blocking/       ← planned
+└── prompts/                   ← one canonical .md per attack
+    ├── xss.md
+    ├── csrf.md
+    ├── clickjacking.md
+    ├── reverse-tabnabbing.md
+    ├── ssrf.md
+    ├── nosql-injection.md
+    ├── sql-injection.md
+    └── [prototype-pollution.md, event-loop-blocking.md — not yet written]
 ```

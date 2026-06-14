@@ -161,26 +161,17 @@ Underneath the visible page — at `z-index: 1` with the CTA button at
 ></iframe>
 ```
 
-The CTA button must be positioned at `position: fixed` with exact `top` and
-`left` values so it sits precisely over CloudVault's "Delete All Files" button
-when the iframe is full-viewport. Use `top: 62%` and `left: 50%`,
-`transform: translateX(-50%)` — matching the victim page layout constraints
-specified above.
-
-When the CTA button is clicked, `pointer-events` on the iframe switches to
-`all` for a brief moment to let the underlying click register, then switches
-back. Actually simpler: remove `pointer-events: none` from the iframe entirely
-and rely on the z-index stacking — the CTA button at z-index 3 captures the
-click visually, but the iframe receives the actual click event because the
-button is transparent. Model this correctly:
-
 The correct clickjacking CSS model:
 - iframe: `opacity: 0; z-index: 2` (on top, invisible, receives clicks)
 - CTA button: `z-index: 1; pointer-events: none` (visible, decorative only)
 - The victim sees the button but the iframe intercepts all clicks
 
-Add `<p class="click-hint">👆 Click anywhere on the button above</p>` below
-the CTA.
+The CTA button must be positioned at `position: fixed` with exact `top` and
+`left` values so it sits precisely over CloudVault's "Delete All Files" button
+when the iframe is full-viewport. Use `top: 62%` and `left: 50%`,
+`transform: translateX(-50%)` — matching the victim page layout constraints.
+
+Add `<p class="click-hint">👆 Click anywhere on the button above</p>` below the CTA.
 
 ### Debug mode toggle
 
@@ -192,13 +183,21 @@ alignment. The CTA button gets a semi-transparent red background.
 
 When toggled OFF: resets to the invisible attack state.
 
-This is the most important teaching feature of the whole demo — it makes the
-deception visible.
+This is the most important teaching feature — it makes the deception visible.
 
-### Attacker dashboard (GET /)
+### Victim switcher (bottom-left, fixed position)
 
-The lure page described above IS the dashboard. No separate attacker tracking
-needed for clickjacking — the attack is visual/behavioral, not data-exfiltration.
+```css
+position: fixed;
+bottom: 1rem;
+left: 1rem;
+display: flex;
+gap: 0.5rem;
+z-index: 9999;
+```
+
+- `Vulnerable (:3013)` — dark button (`#1e293b` bg), opens localhost:3013 in new tab
+- `Protected (:3015)` — red button (`#dc2626` bg), opens localhost:3015 in new tab
 
 ---
 
@@ -226,19 +225,9 @@ res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
 
 Apply via a global middleware at the top of the app so every route is covered.
 
-### What happens when the attacker tries to iframe port 3015
-
-The browser itself refuses to render the iframe. The attacker page shows the
-iframe element but it stays blank/white. Add this to the attacker server's
-HTML: a second "test protected" link so the demo viewer can swap the iframe
-src between 3013 and 3015 and observe the difference.
-
-In the iframe, add an `onerror` / `onload` handler that attempts to detect if
-the frame was blocked and shows a message on the attacker page:
-"🛡️ Iframe blocked — target server sent X-Frame-Options: DENY".
-Note in a comment that this detection is unreliable cross-origin (browsers
-may not fire onerror for header-blocked frames), so the primary evidence is
-the blank iframe + browser console error.
+When the attacker tries to iframe port 3015, the browser itself refuses to render
+the iframe — it stays blank/white. The primary evidence is the blank iframe + browser
+console error.
 
 ---
 
@@ -263,9 +252,8 @@ This fails because attackers use the `sandbox` attribute on the iframe:
 <iframe src="http://victim.com" sandbox="allow-scripts allow-forms"></iframe>
 ```
 
-Include this as a commented block in victim-server.js with the explanation.
-This is a critical teaching point: JavaScript cannot defend against clickjacking.
-Only HTTP headers can.
+Include this as a commented block with the explanation. This is a critical teaching
+point: JavaScript cannot defend against clickjacking. Only HTTP headers can.
 
 ---
 
@@ -296,31 +284,28 @@ Only HTTP headers can.
 
 1. Terminal 3: `npm run victim-protected` → protected CloudVault at localhost:3015
 2. On the attacker page, change the iframe src to localhost:3015.
-3. The iframe goes blank. Open browser DevTools console — see the
-   X-Frame-Options refusal error.
+3. The iframe goes blank. Open browser DevTools console — see the X-Frame-Options refusal error.
 
 ### Vulnerable line (exact)
 
-`victim-server.js` — the vulnerability is the **absence** of a header, not
-the presence of bad code. Every route handler is missing:
+`victim-server.js` — the vulnerability is the **absence** of a header, not the presence
+of bad code. Every route handler is missing:
 
 ```js
 res.setHeader('X-Frame-Options', 'DENY');
 ```
 
-Point this out explicitly: clickjacking vulnerabilities are omissions, not
-commissions.
+Clickjacking vulnerabilities are omissions, not commissions.
 
 ### Why the frame-buster script fails
 
-Dedicated section covering the `sandbox` bypass — this is a well-known trap
-that many developers have fallen into.
+Dedicated section covering the `sandbox` bypass — JavaScript cannot defend against
+clickjacking. Only HTTP headers can.
 
 ### Defense details
 
 - `X-Frame-Options: DENY` — supported since IE8, universally supported
-- `X-Frame-Options: SAMEORIGIN` — allows same-origin embeds (e.g. your own
-  admin panel embedding your own pages)
+- `X-Frame-Options: SAMEORIGIN` — allows same-origin embeds
 - `CSP: frame-ancestors 'none'` — modern equivalent, preferred. Supports
   multiple allowed origins: `frame-ancestors 'self' https://dashboard.myapp.com`
 - `X-Frame-Options` is ignored if CSP `frame-ancestors` is present in

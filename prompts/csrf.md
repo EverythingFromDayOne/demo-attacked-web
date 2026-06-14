@@ -2,7 +2,7 @@
 
 ## Context
 
-This is part of a security attack demonstration lab under `demo-attacked/`.
+Part of the security attack demonstration lab under `demo-attacked/`.
 XSS demos already exist under `demo-attacked/xss/` (ports 3001–3009).
 This CSRF demo lives under `demo-attacked/csrf/` (ports 3010–3012).
 
@@ -117,6 +117,16 @@ New transfers (from CSRF attack or manual use) prepend to this list at runtime.
   `{ type: 'debit', description: 'Wire transfer to ' + recipient, amount, timestamp }`
 - Returns `{ success: true, newBalance, transaction }`
 
+**GET /transfer-get**  ← extra vulnerability (GET that mutates state)
+- Reads `recipient`, `account`, `amount` from `req.query`
+- Same transfer logic as POST /transfer — no body parser needed
+- Comment clearly:
+```js
+// ⚠️ EXTRA VULNERABILITY: GET endpoint that causes state change.
+//    CSRF via <img> tag — fires with zero JS, zero user clicks.
+//    Real rule: GET requests must NEVER mutate state (HTTP spec).
+```
+
 **GET /api/account**
 - Requires session cookie (401 if missing)
 - Returns `{ balance, transactions, owner: 'John Doe', accountNo: '••••4821' }`
@@ -124,8 +134,7 @@ New transfers (from CSRF attack or manual use) prepend to this list at runtime.
 **GET /api/logout**
 - Clears the cookie, returns `{ success: true }`
 
-**GET /** — serves the entire SPA HTML (login + dashboard in one page,
-toggled by JS)
+**GET /** — serves the entire SPA HTML (login + dashboard in one page, toggled by JS)
 
 ---
 
@@ -135,8 +144,7 @@ Two pages served:
 
 ### GET / — Attacker dashboard
 
-Explain the attack to the demo viewer. Dark hacker aesthetic (dark background,
-green terminal-style font). Shows:
+Dark hacker aesthetic (dark background, green terminal-style font). Shows:
 
 - Title: "CSRF Attack Lab — NetBank"
 - Attack flow diagram as a numbered list in a styled box:
@@ -149,10 +157,26 @@ green terminal-style font). Shows:
 - Note: "HttpOnly=true on nb_session — yet the attack still works. CSRF does
   not need JS to read the cookie. The browser sends it automatically."
 
+**Victim switcher (bottom-left, fixed position, same as all other attacker pages):**
+
+```css
+position: fixed;
+bottom: 1rem;
+left: 1rem;
+display: flex;
+gap: 0.5rem;
+z-index: 9999;
+```
+
+- `Vulnerable (:3010)` — dark button (`#1e293b` bg, white text, `#334155` border)
+- `Protected (:3012)` — red button (`#dc2626` bg, white text)
+
+Clicking either button opens the corresponding NetBank instance in a new tab.
+
 ### GET /lure — The malicious page
 
 Disguised as a "ShopNest Rewards" notification:
-- Branding: "ShopNest 🛒" (reuse the brand from the Reflected XSS demo)
+- Branding: "ShopNest 🛒"
 - Headline: "You have a $500 store voucher waiting!"
 - Body text: "As a valued customer, you've been selected for an exclusive
   rewards voucher. Click below to claim your $500 credit."
@@ -161,26 +185,47 @@ Disguised as a "ShopNest Rewards" notification:
 
 **Hidden attack form (invisible):**
 - `<form id="csrf-form" action="http://localhost:3010/transfer" method="POST">`
-- Fields: `recipient=Attacker_Offshore_Acct`, `account=HACK-9999-XXXX`,
-  `amount=9000`
+- Fields: `recipient=Attacker_Offshore_Acct`, `account=HACK-9999-XXXX`, `amount=9000`
 - Auto-submitted via `document.getElementById('csrf-form').submit()` inside a
   `window.onload` handler — no user interaction required
 
-**After submit (same page):** The lure page shows a "Processing your reward…"
-spinner for 1.5 seconds, then displays "🎉 Your $500 voucher has been
-applied!" — the victim sees a confirmation and suspects nothing.
+**Victim switcher** on this page too — with the same bottom-left styling.
 
-**GET-based CSRF footnote:**  
+**Switcher behavior (this page is the most impactful):**
+
+The switcher changes the form's `action` live — no restart needed.
+You can demonstrate the attack succeeding AND being blocked in the same tab.
+
+```js
+let targetPort = 3010;  // default: vulnerable
+
+function updateFormAction() {
+  document.getElementById('csrf-form').action =
+    `http://localhost:${targetPort}/transfer`;
+}
+```
+
+After the form submits, detect the outcome by polling:
+After the form `submit` event fires, wait 1200ms then poll
+`http://localhost:${targetPort}/api/account` via fetch to check the balance.
+
+- If balance dropped below $50,000 → show green success banner:
+  `"✅ Transfer sent — $9,000 stolen. Return to NetBank to confirm."`
+- If fetch returns 403 or balance unchanged → show red blocked banner:
+  `"🛡️ Attack blocked — CSRF token validation failed (403 Forbidden)"`
+- If fetch fails entirely → show:
+  `"⚠️ Could not reach localhost:${targetPort} — is the server running?"`
+
+Add a "Reset / Try Again" button that appears after each attempt, re-enables the form and clears the banner.
+
+**After submit (same page):** The lure page shows "Processing your reward…"
+spinner for 1.5 seconds, then displays "🎉 Your $500 voucher has been
+applied!" — victim sees a confirmation and suspects nothing.
+
+**GET-based CSRF footnote:**
 Also include a second hidden trigger on the lure page — an `<img>` tag with
 `src="http://localhost:3010/transfer-get?recipient=Attacker_GET&account=HACK-GET&amount=1"`.
-Add a `GET /transfer-get` endpoint on victim-server.js that processes the same
-transfer logic (no body parser needed — reads from `req.query`). Comment it
-clearly:
-```
-// ⚠️ EXTRA VULNERABILITY: GET endpoint that causes state change.
-//    CSRF via <img> tag — fires with zero JS, zero user clicks.
-//    Real rule: GET requests must NEVER mutate state (HTTP spec).
-```
+This fires automatically when the page loads — no form submit needed.
 
 ---
 
@@ -229,16 +274,15 @@ Set the session cookie with `sameSite: 'strict'`:
 ```
 
 Both defenses active simultaneously (defense-in-depth). Either one alone would
-stop the attack; together they are belt-and-suspenders.
+stop the attack.
 
 ### Visible proof in the UI
 
 After a failed CSRF attempt against the protected server, the transfer endpoint
-returns 403 with the error message. The protected dashboard shows a "Transfer
-history" list — the forged transfer never appears, balance unchanged.
+returns 403. The protected dashboard shows a "Transfer history" list — the forged
+transfer never appears, balance unchanged.
 
-Add a small informational panel below the transfer form explaining both
-protections:
+Add a small informational panel below the transfer form:
 - "Every form contains a one-time CSRF token the server validates"
 - "Session cookie is SameSite=Strict — browser rejects cross-site submissions"
 
@@ -273,26 +317,24 @@ is even required — an `<img>` tag on any page in the world can trigger it.
 
 ### Vulnerable lines (exact)
 
-Point out in README:
 - `victim-server.js` `POST /transfer` — no `_csrf` check (the entire absence is the vulnerability)
 - `victim-server.js` `GET /transfer-get` — state mutation on GET
 - Session cookie: no `sameSite` attribute set
 
 ### Why HttpOnly doesn't help
 
-Dedicated section explaining:
-> CSRF does not need JavaScript to read the cookie. HttpOnly prevents JS from
-> accessing `document.cookie`, but the browser sends cookies automatically on
-> any HTTP request to the matching domain — whether that request was initiated
-> by the same page or by a form on a completely different site. HttpOnly is the
-> correct defence against XSS-based cookie theft; it is irrelevant to CSRF.
+CSRF does not need JavaScript to read the cookie. HttpOnly prevents JS from
+accessing `document.cookie`, but the browser sends cookies automatically on
+any HTTP request to the matching domain — whether that request was initiated
+by the same page or by a form on a completely different site. HttpOnly is the
+correct defence against XSS-based cookie theft; it is irrelevant to CSRF.
 
 ### Fix explanation
 
-- CSRF token: attacker can SUBMIT a form but cannot READ the victim's page
+- **CSRF token:** attacker can SUBMIT a form but cannot READ the victim's page
   (blocked by Same-Origin Policy), so the attacker cannot know the token value
   to include in the forged request.
-- SameSite=Strict: browser refuses to attach the cookie to any request that
+- **SameSite=Strict:** browser refuses to attach the cookie to any request that
   originated from a different site — the forged POST arrives with no session
   cookie and gets rejected at the auth check before even reaching the CSRF
   token validation.
@@ -301,6 +343,6 @@ Dedicated section explaining:
 
 ## Code comments style (match existing XSS demos)
 
-Vulnerable lines: `// ⚠️ VULNERABILITY: <what and why>`  
-Fixed lines: `// ✅ FIX: <what was changed and why it works>`  
+Vulnerable lines: `// ⚠️ VULNERABILITY: <what and why>`
+Fixed lines: `// ✅ FIX: <what was changed and why it works>`
 Explanatory: `// <plain English explaining the security concept>`

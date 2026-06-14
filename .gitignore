@@ -1,9 +1,13 @@
-# Dependencies
+# Dependencies — covers all sub-projects recursively
 node_modules/
 
-# Runtime uploads (demo avatars — may contain malicious test files)
+# Runtime uploads — SVG upload demo (may contain malicious test files)
 xss/svg-upload/uploads/
 xss/svg-upload/uploads-protected/
+
+# SQLite database files (sql-injection demo uses in-memory, but guard against persistent DBs)
+*.sqlite
+*.db
 
 # Environment and secrets
 .env

@@ -90,8 +90,7 @@ Two panels:
 - "Node.js Performance Docs" — nodejs.org
 - "Rust for JS Developers" — rustforjs.dev
 
-Each shows a preview card: title, truncated description, favicon placeholder,
-domain badge.
+Each shows a preview card: title, truncated description, favicon placeholder, domain badge.
 
 **Right panel — "Add a Link" form:**
 - Large label: "Paste any URL to generate a preview"
@@ -154,10 +153,12 @@ Result card displays:
 
 Simulates a private internal microservice — the kind that lives inside a
 VPC or Docker network, reachable by other backend services but never by
-the public internet. This is the SSRF target.
+the public internet. This is the SSRF **target**, not the attacker's tool.
 
-It also serves an SSRF attack console at `GET /` so the demo viewer can
-easily copy target URLs and switch between victim servers.
+Port 3020 should feel like bland, boring enterprise internal tooling. Think:
+a developer stumbled onto an internal admin page by accident after getting
+inside the network. No hacker aesthetic. No attack instructions. The page
+should feel like something that was never designed to be seen by an outsider.
 
 ### Internal API routes (all return JSON with `Content-Type: application/json`)
 
@@ -238,42 +239,93 @@ Returns fake but realistic-looking environment variables:
 }
 ```
 
-### SSRF Attack Console (GET /)
+### Root page (GET /) — Internal service registry
 
-Dark terminal aesthetic, matching other attacker dashboards in the lab.
+**NOT a hacker terminal. NOT an attack console.** Design as bland enterprise internal tooling.
 
-Title: "SSRF Attack Console — Internal API"
+#### Header / identity
 
-**Section 1 — Available internal endpoints to probe:**
-
-Table listing the 4 internal endpoints with a "Copy" button next to each URL:
 ```
-http://localhost:3020/internal          ← service discovery
-http://localhost:3020/internal/env      ← credentials & secrets
-http://localhost:3020/internal/users    ← user database dump
-http://localhost:3020/internal/config   ← infrastructure config
-http://localhost:3020/internal/health   ← db/redis connection strings
+DevShare Platform — Internal Services
+devshare-internal.corp  ·  NOT FOR PUBLIC ACCESS
 ```
 
-Plus two bonus entries for real-world awareness:
+Small monospace font. Muted color palette — `#1a1a2e` background, `#e2e8f0` text,
+`#334155` borders. No neon. No green terminal glow.
+
+One subdued banner below the header:
+
 ```
-http://169.254.169.254/latest/meta-data/iam/security-credentials/  ← AWS metadata (EC2 only)
-http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token  ← GCP metadata
+⚠  This service has no authentication — it assumes network-level isolation.
+   Access from outside the internal network means your perimeter is broken.
 ```
-Mark the AWS/GCP entries with a note: "(only works on cloud VMs — included for
-real-world awareness)".
 
-**Section 2 — How to use:**
+Style: amber/yellow text (`#fbbf24`), no background box — just a single line.
 
-Numbered steps:
-1. Start the vulnerable DevShare server: `npm run victim`
-2. Open `http://localhost:3019`
-3. Paste one of the URLs above into the preview form
-4. The server fetches the internal URL and returns its contents to your browser
+#### Service registry table
 
-**Section 3 — Victim switcher (bottom-left, same as all other attacker pages):**
-- `Vulnerable (:3019)` — dark button, opens localhost:3019 in new tab
-- `Protected (:3021)` — red button, opens localhost:3021 in new tab
+Title: `Internal Endpoints`
+
+A simple HTML table. No copy buttons — just a clean list:
+
+| Path | Description | Response |
+|------|-------------|----------|
+| `/internal` | Service discovery | JSON |
+| `/internal/env` | Runtime environment & secrets | JSON |
+| `/internal/users` | User database snapshot | JSON |
+| `/internal/config` | Infrastructure configuration | JSON |
+| `/internal/health` | DB / Redis connection strings | JSON |
+
+Plain table styling. Alternating row shading. No action buttons.
+
+Below the table, a muted note in small text:
+
+```
+These endpoints return live data. No auth required — access control is
+handled at the network layer (VPC security groups / firewall rules).
+```
+
+#### Demo context callout
+
+A `<details>` element (closed by default), labeled:
+
+```
+▶ Demo context — why this page is reachable
+```
+
+When expanded:
+
+```
+In production, port 3020 would be on a private subnet unreachable from
+your browser. This demo runs everything on localhost so you can see the
+internal API directly — but that's not how SSRF works in the real attack.
+
+In the real attack:
+  Your browser cannot reach http://localhost:3020/internal/env
+  DevShare's server (port 3019) CAN reach it — same machine, same network
+  You trick DevShare into fetching it for you via the URL preview feature
+  DevShare returns the response to your browser
+
+That's Server-Side Request Forgery: you forged a request the server made.
+
+To run the attack:
+  1. Open http://localhost:3019 (vulnerable DevShare)
+  2. Paste any /internal/* URL into the preview field
+  3. Click Generate Preview
+  4. Read the secrets in the preview card
+```
+
+#### Demo controls (bottom of page)
+
+A horizontal rule, then a small section labeled `Demo Controls` in muted text.
+
+Two small secondary buttons only:
+- `Vulnerable DevShare :3019` — opens `http://localhost:3019` in new tab
+- `Protected DevShare :3021` — opens `http://localhost:3021` in new tab
+
+Style: `border: 1px solid #475569`, `background: transparent`, `color: #94a3b8`. Not prominent.
+
+No copy buttons. No "paste this URL" instructions.
 
 ---
 
@@ -354,7 +406,7 @@ And render a red blocked banner in the UI:
 | Port | Role | File |
 |------|------|------|
 | 3019 | Vulnerable victim (DevShare) | `victim-server.js` |
-| 3020 | Internal API + attack console | `internal-server.js` |
+| 3020 | Internal API (the target, not the attacker) | `internal-server.js` |
 | 3021 | Protected victim (DevShare) | `victim-server-protected.js` |
 
 ### Attack walkthrough
@@ -362,7 +414,7 @@ And render a red blocked banner in the UI:
 1. `cd demo-attacked/ssrf && npm install`
 2. Terminal 1: `npm run victim` → DevShare at **localhost:3019**
 3. Terminal 2: `npm run internal` → Internal API at **localhost:3020**
-4. Open **localhost:3020** — you see the attack console with available endpoints.
+4. Open **localhost:3020** — note this is an internal server, not an attack tool.
 5. Copy `http://localhost:3020/internal/env`.
 6. Open **localhost:3019**, paste the URL into the preview form, click "Generate Preview".
 7. The DevShare server fetches the internal API and returns your fake database
@@ -375,11 +427,7 @@ And render a red blocked banner in the UI:
 2. Paste the same `http://localhost:3020/internal/env` URL.
 3. Result: `"⛔ Blocked: Private/loopback address blocked"`
 
-### Why this attack is dangerous
-
-The browser can only reach public internet addresses. The server lives
-inside the same network as databases, caches, admin APIs, and cloud
-infrastructure. SSRF turns the server into an **unintentional proxy**:
+### Mental model — who is the attacker?
 
 ```
 Attacker browser → [public internet] → DevShare server (3019)
@@ -387,20 +435,23 @@ Attacker browser → [public internet] → DevShare server (3019)
                                        Internal API (3020) ← never supposed to be reachable
 ```
 
+Port 3020 is the **target** — it simulates `169.254.169.254` or `db.internal`.
+Port 3019 is the **victim server** that makes the request on the attacker's behalf.
+The browser (attacker) cannot reach 3020 directly — but it tricks 3019 into doing it.
+
+### Why this attack is dangerous
+
 Real-world SSRF targets:
-- **AWS EC2 metadata** (`169.254.169.254`) — returns IAM credentials for the
-  instance's role. Full cloud account takeover in one HTTP request.
+- **AWS EC2 metadata** (`169.254.169.254`) — returns IAM credentials. Full cloud account takeover in one HTTP request.
 - **GCP/Azure metadata** — same pattern, different URL.
-- **Elasticsearch** (`localhost:9200`) — unauthenticated by default in older
-  versions. `GET /_cat/indices` lists all data.
+- **Elasticsearch** (`localhost:9200`) — unauthenticated by default in older versions.
 - **Redis** (`localhost:6379`) — writable via HTTP in older configs.
 - **Internal Kubernetes API** (`10.x.x.x`) — cluster management.
 - **CI/CD secrets** — Jenkins at `localhost:8080`, Vault at `localhost:8200`.
 
 ### Why the denylist is insufficient — DNS rebinding
 
-The protected server checks the URL's **hostname** before fetching. An
-attacker can bypass this with DNS rebinding:
+The protected server checks the URL's **hostname** before fetching. An attacker can bypass with DNS rebinding:
 
 1. Register `ssrf.attacker.com` with a short TTL (e.g. 10 seconds).
 2. First DNS query returns a legitimate public IP — passes the denylist check.
@@ -408,14 +459,7 @@ attacker can bypass this with DNS rebinding:
 4. Server performs the actual fetch — DNS now resolves to loopback.
 5. Server fetches `http://127.0.0.1/internal/env` — denylist was bypassed.
 
-**Robust fix:** resolve the hostname to an IP address first, validate the
-resulting IP, and then immediately open a connection to that IP (not the
-hostname) — so the same DNS resolution is used for both the check and the
-fetch. This is called **TOCTOU-safe SSRF prevention** (Time-Of-Check
-Time-Of-Use). Libraries like `ssrf-req-filter` implement this correctly.
-
-The demo uses the simpler denylist approach because DNS rebinding cannot
-be demonstrated locally. The README documents this limitation explicitly.
+**Robust fix:** resolve hostname to IP first, validate the IP, then fetch to that IP (not the hostname). This is TOCTOU-safe SSRF prevention. Libraries like `ssrf-req-filter` implement this correctly.
 
 ### Vulnerable code (exact)
 
@@ -425,25 +469,15 @@ be demonstrated locally. The README documents this limitation explicitly.
 const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
 ```
 
-The single line of vulnerability is the absence of URL validation before
-this call. `fetch(url)` with user-supplied `url` and no checks is SSRF.
+The vulnerability is the absence of URL validation before this call.
 
 ### Defense details
 
-1. **Scheme allowlist** — only `http:` and `https:`. Blocks `file://`,
-   `gopher://`, `dict://`, and other dangerous schemes.
-2. **Hostname denylist** — blocks loopback (`127.x.x.x`, `::1`, `localhost`),
-   link-local (`169.254.0.0/16`), and RFC-1918 private ranges.
-3. **DNS resolution check** (not implemented here, but correct approach) —
-   resolve hostname to IP before fetching, validate the IP, fetch to the IP.
-   Prevents DNS rebinding.
-4. **Response size limit** — cap response bytes to prevent reading huge
-   files if SSRF is partially achieved.
-5. **Internal network segmentation** — internal services should not be
-   reachable from application servers at all. SSRF is only possible because
-   `victim-server.js` and `internal-server.js` share a network. In production,
-   use VPC security groups, firewalls, or service mesh policies to enforce
-   this separation at the network layer — defense in depth.
+1. **Scheme allowlist** — only `http:` and `https:`. Blocks `file://`, `gopher://`, `dict://`.
+2. **Hostname denylist** — blocks loopback, link-local, and RFC-1918 private ranges.
+3. **DNS resolution check** (not implemented here, but correct approach) — resolve hostname to IP before fetching, validate the IP, fetch to the IP. Prevents DNS rebinding.
+4. **Response size limit** — cap response bytes to prevent reading huge files if SSRF is partially achieved.
+5. **Internal network segmentation** — internal services should not be reachable from application servers at all. Use VPC security groups, firewalls, or service mesh policies — defense in depth.
 
 ### Code comment style (match existing demos)
 

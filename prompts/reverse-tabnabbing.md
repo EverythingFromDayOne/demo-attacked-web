@@ -115,16 +115,64 @@ httpOnly: false
 path:     /
 ```
 
-### Internal article pages (`GET /articles/:id`)
+### Newsletter route (GET /newsletter)
 
-Serve a simple article page with placeholder lorem ipsum content so the
-blog feels real. Include a "← Back to Home" link.
+Serve a modified TechBlog page that simulates arriving via a newsletter email
+link. The URL itself contains sensitive data:
+
+```
+http://localhost:3016/newsletter?subscriber_id=ALEX_READER_TOKEN_f3a9c2b1&utm_campaign=q2_digest&utm_source=email
+```
+
+Render `subscriber_id` prominently at the top inside a highlighted box:
+
+```
+📧 Newsletter Link Detected
+Your subscriber token: ALEX_READER_TOKEN_f3a9c2b1
+(This token identifies you uniquely in our database)
+```
+
+**Demo banner (orange):**
+```
+⚠️ NOOPENER ONLY: Tabnabbing blocked — but Referer header will carry this full URL
+(including your subscriber_id) to any external site you click.
+```
+
+One article card on the page:
+
+> **"How AI Is Reshaping Frontend Development ↗ External"**
+> [Read Full Article →]
+
+The link points to `http://localhost:3017/article` and uses:
+
+```html
+<!-- ✅ noopener: window.opener is null — tabnabbing blocked
+     ⚠️ noreferrer NOT set: browser will send the full Referer header,
+        including the subscriber_id token in the URL, to the external site -->
+<a href="http://localhost:3017/article" target="_blank" rel="noopener nofollow">
+  Read Full Article →
+</a>
+```
+
+Below the article card, add a warning panel:
+
+```
+⚠️ What the external site will receive when you click:
+Referer: http://localhost:3016/newsletter?subscriber_id=ALEX_READER_TOKEN_f3a9c2b1&utm_campaign=q2_digest&utm_source=email
+
+Your subscriber token is now in the external server's access logs.
+```
+
+### Internal article pages (GET /articles/:id)
+
+Serve a simple article page with placeholder content so the blog feels real.
+Include a "← Back to Home" link.
 
 ---
 
 ## Attacker Server (attacker-server.js — port 3017)
 
-Serves three routes:
+Serves these routes:
 
 ### GET / — The fake external article
 
@@ -168,8 +216,62 @@ users frequently don't check the URL after a tab switch. The phishing page
 depends on this inattention.
 
 On form submit: POST to `POST /api/steal` with the credentials, then
-redirect to `http://localhost:3016` (back to the real blog, looking like
-a successful re-login).
+redirect to `http://localhost:3016` (back to the real blog).
+
+### GET /article — The fake article (for Referer demo)
+
+This is the most important page for the Referer leakage demo. Read the
+Referer header from the incoming request and display it prominently.
+
+```js
+app.get('/article', (req, res) => {
+  const referer = req.headers['referer'] || req.headers['referrer'] || null;
+  // render the page with referer value visible
+});
+```
+
+**If `referer` is present** — show a red box:
+
+```
+🚨 REFERER HEADER RECEIVED
+
+Your browser told us you came from:
+
+http://localhost:3016/newsletter
+  ?subscriber_id=ALEX_READER_TOKEN_f3a9c2b1
+  &utm_campaign=q2_digest
+  &utm_source=email
+
+Extracted token: ALEX_READER_TOKEN_f3a9c2b1
+
+This token is now in our access log. We can use it to identify you,
+unsubscribe you from TechBlog, or combine it with other tracking data.
+```
+
+Style: dark red background (`#450a0a`), red border (`#dc2626`), white text.
+
+Parse the Referer URL and extract query parameters into a small table:
+
+| Parameter | Value |
+|-----------|-------|
+| subscriber_id | ALEX_READER_TOKEN_f3a9c2b1 |
+| utm_campaign | q2_digest |
+| utm_source | email |
+
+**If `referer` is null or empty** — show a green box:
+
+```
+✅ NO REFERER RECEIVED
+
+Your browser sent no Referer header.
+rel="noreferrer" suppressed it.
+We have no information about where you came from.
+```
+
+Style: dark green background (`#052e16`), green border (`#16a34a`), white text.
+
+Below the Referer box: render a normal-looking fake article about AI (a few
+paragraphs) so the page looks like a legitimate external article.
 
 ### POST /api/steal — Credential receiver
 
@@ -182,13 +284,35 @@ Used by the attacker dashboard.
 
 ### GET /dashboard — Attacker control panel
 
-Dark terminal aesthetic (same as other attacker dashboards in the lab).
-Shows:
+Dark terminal aesthetic. Shows:
 - Title: "Reverse Tabnabbing Attack Lab"
 - Attack flow explanation (numbered steps)
 - Table of stolen credentials: Username | Password | Timestamp
 - Polling every 3 seconds via `GET /api/stolen`
 - Empty state: "Waiting for victim to submit credentials..."
+
+**Referer Leak Demo section** (below stolen credentials):
+
+```
+## Referer Leak Demo
+
+Open localhost:3016/newsletter (vulnerable — noopener only) or
+localhost:3018/newsletter (protected — noopener + noreferrer)
+then click the article link.
+
+The /article page will show whether the subscriber_id token was received.
+```
+
+With quick-open buttons:
+- "Open Vulnerable TechBlog Newsletter" → opens `http://localhost:3016/newsletter?subscriber_id=ALEX_READER_TOKEN_f3a9c2b1&utm_campaign=q2_digest&utm_source=email` in new tab
+- "Open Protected TechBlog Newsletter" → opens `http://localhost:3018/newsletter?subscriber_id=ALEX_READER_TOKEN_f3a9c2b1&utm_campaign=q2_digest&utm_source=email` in new tab
+- "Open Article Page" → opens `http://localhost:3017/article` in new tab
+
+**Victim switcher (bottom-left, fixed position):**
+- `Vulnerable (:3016)` — dark button, opens localhost:3016 in new tab
+- `Protected (:3018)` — red button, opens localhost:3018 in new tab
+
+Same fixed bottom-left styling as all other attacker pages in the lab.
 
 ---
 
@@ -210,28 +334,45 @@ Identical TechBlog UI. Changes:
 </a>
 ```
 
-Apply via a server-side middleware that adds the header:
+**Referrer-Policy header** (server-side, defense-in-depth):
 ```js
 // ✅ FIX: Referrer-Policy header as defense-in-depth
 res.setHeader('Referrer-Policy', 'no-referrer');
 ```
 
-When the victim clicks the external link from the protected server:
-- The new tab (attacker page at 3017) loads normally
+### GET /newsletter (protected version)
+
+Same layout as the vulnerable server's `/newsletter`. Changes:
+
+**Demo banner (green):**
+```
+✅ NOOPENER + NOREFERRER: Tabnabbing blocked AND Referer header suppressed —
+external site receives no information about where you came from.
+```
+
+The link uses:
+
+```html
+<!-- ✅ noopener: window.opener is null — tabnabbing blocked
+     ✅ noreferrer: Referer header suppressed — subscriber_id token never leaves this tab -->
+<a href="http://localhost:3017/article" target="_blank" rel="noopener noreferrer nofollow">
+  Read Full Article →
+</a>
+```
+
+The warning panel below the article card becomes:
+
+```
+✅ What the external site will receive when you click:
+Referer: (none — header suppressed by rel="noreferrer")
+
+Your subscriber token never leaves this tab.
+```
+
+When the victim clicks from the protected server:
 - `window.opener` is `null`
-- The `if (window.opener)` check fails silently
-- The original tab stays on TechBlog exactly as the user left it
-- Switching back shows TechBlog intact, not a phishing page
-
----
-
-## Victim Switcher (bottom-left, match all other attacker pages)
-
-Add to the attacker dashboard (`GET /dashboard`):
-- `Vulnerable (:3016)` — dark button, opens localhost:3016 in new tab
-- `Protected (:3018)` — red button, opens localhost:3018 in new tab
-
-Same fixed bottom-left styling as XSS and CSRF attacker pages.
+- No Referer header is sent
+- Original tab stays on TechBlog exactly as the user left it
 
 ---
 
@@ -245,41 +386,65 @@ Same fixed bottom-left styling as XSS and CSRF attacker pages.
 | 3017 | Attacker (fake article + phishing clone) | `attacker-server.js` |
 | 3018 | Protected victim (TechBlog) | `victim-server-protected.js` |
 
-### Attack walkthrough
+### Attack walkthrough — Reverse Tabnabbing
 
 1. `cd demo-attacked/reverse-tabnabbing && npm install`
 2. Terminal 1: `npm run victim` → TechBlog at **localhost:3016**
 3. Terminal 2: `npm run attacker` → Attacker at **localhost:3017**
 4. Open **localhost:3016** — you are logged in as Alex Reader.
-5. Click **"How AI Is Reshaping Frontend Development ↗"** — a new tab opens
-   with the external article.
+5. Click **"How AI Is Reshaping Frontend Development ↗"** — a new tab opens.
 6. Read a sentence or two (the tab swap has already happened silently).
 7. Switch back to the original tab.
-8. You are now on **localhost:3017/phish** — a TechBlog login page asking
-   you to re-authenticate. The URL gives it away, but most users don't check.
+8. You are now on **localhost:3017/phish** — a TechBlog login page asking you to re-authenticate.
 9. Type any credentials and submit.
 10. Open **localhost:3017/dashboard** — your credentials appear instantly.
 
-### Protected demo
+### Protected demo — Reverse Tabnabbing
 
 1. Terminal 3: `npm run victim-protected` → protected TechBlog at **localhost:3018**
 2. Open **localhost:3018**, click the same external article.
 3. Switch back — original tab is still on TechBlog, untouched.
 4. On the attacker page, `window.opener` is `null` — the redirect silently failed.
 
+### Attack walkthrough — Referer Leakage
+
+1. All three servers must be running.
+2. Open **localhost:3017/dashboard** and click "Open Vulnerable TechBlog Newsletter".
+3. Notice the URL: `localhost:3016/newsletter?subscriber_id=ALEX_READER_TOKEN_f3a9c2b1&...`
+4. The page highlights your subscriber token — it's in the URL.
+5. Click **"Read Full Article →"** — new tab opens at `localhost:3017/article`.
+6. The article page shows a red box: **"Referer header received"** with your full URL and extracted `subscriber_id` token.
+7. Tabnabbing did NOT fire (window.opener is null) — but the token leaked via Referer.
+
+### Protected path — Referer Leakage
+
+1. Click **"Open Protected TechBlog Newsletter"** from the dashboard.
+2. Click **"Read Full Article →"**.
+3. The article page shows a green box: **"No Referer received"** — the token never left your browser.
+
+### Key insight
+
+```
+rel="noopener"            → window.opener = null  ✅  (tabnabbing blocked)
+                          → Referer header sent   ⚠️  (token leaked to external site)
+
+rel="noopener noreferrer" → window.opener = null  ✅  (tabnabbing blocked)
+                          → Referer header absent ✅  (token never sent)
+```
+
+`noopener` and `noreferrer` block two different channels:
+- `noopener`: blocks the new tab from reaching BACK into your tab
+- `noreferrer`: blocks your tab from sending data FORWARD to the new tab
+
 ### Why modern browsers don't fully solve this
 
-Chrome 88+ (Jan 2021) added implicit `noopener` to all `target="_blank"` links.
-This would block the attack without any code change. However:
+Chrome 88+ (Jan 2021) added implicit `noopener` to all `target="_blank"` links. However:
 
 - The demo uses explicit `rel="opener"` to show what happens with old code or
   third-party widgets that predate Chrome 88
-- Any library or CMS that generates `target="_blank"` links before 2021 without
-  `rel="noopener"` is still vulnerable in older browsers
 - `rel="opener"` can be set intentionally or by mistake and completely bypasses
   the browser default
 - The fix (`rel="noopener noreferrer"`) has been the correct answer since 2015
-  — relying on the browser default instead of writing it explicitly is fragile
 
 Always write `rel="noopener noreferrer"` explicitly. Don't rely on browser defaults.
 
@@ -291,18 +456,13 @@ Always write `rel="noopener noreferrer"` explicitly. Don't rely on browser defau
 <a href="http://localhost:3017" target="_blank" rel="opener nofollow">
 ```
 
-The vulnerability is `rel="opener"`. Removing it (or replacing with
-`rel="noopener noreferrer"`) fully neutralises the attack.
+The vulnerability is `rel="opener"`. Replacing with `rel="noopener noreferrer"` fully neutralises the attack.
 
 ### Defense details
 
-- `rel="noopener"` — sets `window.opener = null` in the new tab. The
-  attacker page cannot reference or redirect the original tab.
-- `rel="noreferrer"` — additionally suppresses the `Referer` header so
-  the destination page doesn't learn which page the user came from.
-  Also implies `noopener` in all modern browsers.
-- `Referrer-Policy: no-referrer` header — server-level defense that
-  applies to all navigation from this page, not just links with the attribute.
+- `rel="noopener"` — sets `window.opener = null` in the new tab. The attacker page cannot reference or redirect the original tab.
+- `rel="noreferrer"` — additionally suppresses the `Referer` header so the destination page doesn't learn which page the user came from. Also implies `noopener` in all modern browsers.
+- `Referrer-Policy: no-referrer` — server-level defense that applies to all navigation from this page, not just links with the attribute.
 
 ### Code comment style (match existing demos)
 
