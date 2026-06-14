@@ -22,7 +22,8 @@ Every demo follows the same structure: a realistic victim app, an attacker serve
 | 10 | Prototype Pollution | `prototype-pollution/` | 3028–3030 | 📋 Prompt ready |
 | 11 | Event Loop Blocking | `event-loop-blocking/` | 3031–3033 | 📋 Prompt ready |
 | 12 | JWT Attacks | `jwt-attacks/` | 3034–3036 | ✅ Complete |
-| 13 | Command Injection | `command-injection/` | 3037–3039 | 📋 Prompt ready |
+| 13 | Command Injection | `command-injection/` | 3037–3039 | ✅ Complete |
+| 14 | IDOR | `idor/` | 3040–3042 | 📋 Prompt ready |
 
 Port layout: each demo uses `vulnerable victim → attacker/guide → protected victim`.
 
@@ -101,6 +102,9 @@ Each attack's `README.md` has the exact walkthrough, vulnerable line references,
 | 3037 | Command Injection | Vulnerable victim (NetProbe) |
 | 3038 | Command Injection | Attack guide |
 | 3039 | Command Injection | Protected victim |
+| 3040 | IDOR | Vulnerable victim (PayrollHub) |
+| 3041 | IDOR | Attack lab |
+| 3042 | IDOR | Protected victim |
 
 All ports are unique. Every demo can run simultaneously.
 
@@ -134,6 +138,9 @@ A single JSON merge request containing `{"__proto__": {"isAdmin": true}}` corrup
 
 ### 12 · JWT Attacks
 Two attack vectors against JSON Web Tokens. The `alg:none` attack exploits servers that read the algorithm from the token header itself — the attacker strips the signature, sets `alg: none`, and the server skips verification entirely. The weak-secret attack brute-forces a common `JWT_SECRET` (`"secret"`) client-side using the Web Crypto API, then re-signs a token with `role: admin`. Fixed by whitelisting `algorithms: ['HS256']` in `jwt.verify()` and generating secrets with `crypto.randomBytes(64)`. → [`jwt-attacks/README.md`](jwt-attacks/README.md)
+
+### 14 · IDOR (Insecure Direct Object Reference)
+The server checks authentication but not authorization. Payslip IDs are sequential integers — any logged-in employee can read any other employee's salary by incrementing the number in the URL. The automated enumerator fetches all 12 payslips across 4 salary bands in under a second. Fix: add `AND user_id = ?` to every resource query. Returns 404 (not 403) on ownership failure — a 403 would confirm the object exists, leaking information to the attacker. → [`idor/README.md`](idor/README.md)
 
 ### 13 · Command Injection
 User-supplied input is concatenated directly into a shell command via `child_process.exec()`. The OS shell interprets `&`, `;`, `|`, and `$()` as control operators — the attacker appends a second command to a legitimate ping request and gets arbitrary OS-level code execution. A "ping localhost" becomes "ping localhost && cat /etc/passwd". Fixed by switching to `execFile()` (no shell is invoked) plus a hostname allowlist that rejects any character outside `[a-zA-Z0-9\-.]`. → [`command-injection/README.md`](command-injection/README.md)
@@ -179,6 +186,7 @@ demo-attacked/
 ├── prototype-pollution/       ← ConfigHub merge demo
 ├── event-loop-blocking/       ← DevUtils CPU + ReDoS demo
 ├── jwt-attacks/                 ← AuthVault JWT forgery demo
+├── command-injection/           ← NetProbe exec() demo
 └── prompts/                   ← one canonical .md per attack
     ├── xss.md
     ├── csrf.md
@@ -190,5 +198,6 @@ demo-attacked/
     ├── prototype-pollution.md
     ├── event-loop-blocking.md
     ├── jwt-attacks.md
-    └── command-injection.md
+    ├── command-injection.md
+    └── idor.md
 ```
