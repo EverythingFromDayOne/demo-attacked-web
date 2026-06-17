@@ -4,9 +4,9 @@
 
 | Port | Role | File | npm script |
 |------|------|------|------------|
-| 3003 | Vulnerable victim | `victim-server.js` | `npm run victim` |
-| 3004 | Attacker collector | `attacker-server.js` | `npm run attacker` |
-| 3008 | Protected victim | `victim-server-protected.js` | `npm run victim-protected` |
+| 3003 | Vulnerable victim | `victim-server.js` | `npm run vulnerable` |
+| 3004 | Attacker collector | `attacker-server.js` | `npm run guide` |
+| 3008 | Protected victim | `victim-server-protected.js` | `npm run secure` |
 
 ## Attack Flow
 
@@ -28,8 +28,8 @@ The attack requires social engineering: the victim must click a crafted link (ty
 
 ## How to Run
 
-1. Terminal 1: `cd demo-attacked/xss/reflected && npm run victim`
-2. Terminal 2: `cd demo-attacked/xss/reflected && npm run attacker`
+1. Terminal 1: `cd demo-attacked/xss/reflected && npm run vulnerable`
+2. Terminal 2: `cd demo-attacked/xss/reflected && npm run guide`
 3. Open `http://localhost:3003` — note the `shopper_session` cookie in the yellow banner.
 4. Open `http://localhost:3004` — attacker dashboard.
 5. In the attacker dashboard: type any product name, pick a template, click "Generate Phishing Email".

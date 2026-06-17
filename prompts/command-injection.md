@@ -527,9 +527,9 @@ Two layers, both required:
 ```bash
 cd command-injection
 npm install
-npm run victim           # terminal 1 → localhost:3037
-npm run attacker         # terminal 2 → localhost:3038
-npm run victim-protected # terminal 3 → localhost:3039
+npm run vulnerable           # terminal 1 → localhost:3037
+npm run guide         # terminal 2 → localhost:3038
+npm run secure # terminal 3 → localhost:3039
 ```
 
 ---

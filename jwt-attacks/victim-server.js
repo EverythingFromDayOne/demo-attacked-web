@@ -1,5 +1,5 @@
 /*
- * Terminal 1: cd demo-attacked/jwt-attacks && npm install && npm run victim
+ * Terminal 1: cd demo-attacked/jwt-attacks && npm install && npm run vulnerable
  * Attack lab: npm run guide → http://localhost:3035
  */
 

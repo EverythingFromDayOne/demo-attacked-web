@@ -1,5 +1,5 @@
 /*
- * Terminal 2: cd demo-attacked/path-traversal && npm run attacker
+ * Terminal 2: cd demo-attacked/path-traversal && npm run guide
  */
 
 const express = require('express');
@@ -46,12 +46,12 @@ const SWITCHER_CSS = `
       border-color: #fff;
     }
     .target-switcher .btn-protected {
-      background: #dc2626;
+      background: #16a34a;
       color: #fff;
-      border-color: #dc2626;
+      border-color: #16a34a;
     }
     .target-switcher .btn-protected.active {
-      background: #ef4444;
+      background: #15803d;
       color: #fff;
       border-color: #ef4444;
     }`;

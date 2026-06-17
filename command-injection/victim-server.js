@@ -1,6 +1,6 @@
 /*
- * Terminal 1: cd demo-attacked/command-injection && npm install && npm run victim
- * Attack guide: npm run attacker → http://localhost:3038
+ * Terminal 1: cd demo-attacked/command-injection && npm install && npm run vulnerable
+ * Attack guide: npm run guide → http://localhost:3038
  */
 
 const express = require('express');

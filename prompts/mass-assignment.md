@@ -512,9 +512,9 @@ Object.assign(req.user, update);
 ```bash
 cd demo-attacked/mass-assignment
 npm install
-npm run victim           # :3046
-npm run attacker         # :3047
-npm run victim-protected # :3048
+npm run vulnerable           # :3046
+npm run guide         # :3047
+npm run secure # :3048
 ```
 
 ### Walkthrough

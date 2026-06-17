@@ -4,9 +4,9 @@
   "description": "Reverse tabnabbing security education demo — TechBlog",
   "main": "victim-server.js",
   "scripts": {
-    "victim": "node victim-server.js",
-    "attacker": "node attacker-server.js",
-    "victim-protected": "node victim-server-protected.js"
+    "vulnerable": "node victim-server.js",
+    "guide": "node attacker-server.js",
+    "secure": "node victim-server-protected.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

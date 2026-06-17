@@ -4,9 +4,9 @@
   "description": "SQL injection security education demo — DevLinks",
   "main": "victim-server.js",
   "scripts": {
-    "victim": "node victim-server.js",
+    "vulnerable": "node victim-server.js",
     "guide": "node attack-guide-server.js",
-    "victim-protected": "node victim-server-protected.js"
+    "secure": "node victim-server-protected.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

@@ -1,8 +1,8 @@
 /*
  * How to Run (protected):
  *
- * Terminal 1: cd demo-attacked/reverse-tabnabbing && npm run victim-protected
- * Terminal 2: cd demo-attacked/reverse-tabnabbing && npm run attacker
+ * Terminal 1: cd demo-attacked/reverse-tabnabbing && npm run secure
+ * Terminal 2: cd demo-attacked/reverse-tabnabbing && npm run guide
  *
  * Compare:
  *   http://localhost:3016  ← vulnerable (rel="opener")

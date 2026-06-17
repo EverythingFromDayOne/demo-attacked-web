@@ -504,7 +504,7 @@ const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
       <pre>1. Log in at :3034 as alice → copy the token (it appears in Step 0 above)
 2. Open :3034 — click "Sign Out" → server adds token's jti to its denylist Set
 3. Click "Test Revoked Token on :3034" below → 401 "Token has been revoked"
-4. Now restart the :3034 server (Ctrl+C in terminal, npm run victim again)
+4. Now restart the :3034 server (Ctrl+C in terminal, npm run vulnerable again)
 5. Click "Test Revoked Token" again → 200 OK — token works again
    The denylist lived only in memory. Restart = empty Set = revocation gone.</pre>
     </div>
@@ -851,7 +851,7 @@ npm install   # installs jsonwebtoken + cors
 
 ### Attack Walkthrough — alg:none
 
-**Terminal 1:** `npm run victim`
+**Terminal 1:** `npm run vulnerable`
 **Terminal 2:** `npm run guide`
 
 1. Open **localhost:3035**
@@ -895,7 +895,7 @@ const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
 
 1. Log in at **localhost:3034** → copy the token → click "Sign Out"
 2. Go to the attack guide (3035) → paste the old token in Step 0 → click **Test Revoked Token on :3034** → `✓ Token rejected: "Token has been revoked"`
-3. Restart the `:3034` server (`Ctrl+C`, `npm run victim`) → test again → token accepted again
+3. Restart the `:3034` server (`Ctrl+C`, `npm run vulnerable`) → test again → token accepted again
 4. This demonstrates: **in-memory denylists are not persistent** — production requires Redis or a database.
 
 ### Why jwt.decode() is dangerous

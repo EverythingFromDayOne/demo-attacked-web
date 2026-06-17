@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/xss/stored && npm install && npm run victim
- * Terminal 2: cd demo-attacked/xss/stored && npm run attacker
+ * Terminal 1: cd demo-attacked/xss/stored && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/xss/stored && npm run guide
  *
  * Then open:
  *   http://localhost:3001/admin  ← Open first to set the agent cookie

@@ -4,9 +4,9 @@
   "description": "SVG Upload XSS security education demo — ConnectHub professional network",
   "main": "victim-server.js",
   "scripts": {
-    "victim": "node victim-server.js",
-    "victim-protected": "node victim-server-protected.js",
-    "attacker": "node attacker-server.js"
+    "vulnerable": "node victim-server.js",
+    "secure": "node victim-server-protected.js",
+    "guide": "node attacker-server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

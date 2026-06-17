@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/command-injection && npm run victim-protected
+ * Terminal 3: cd demo-attacked/command-injection && npm run secure
  */
 
 const express = require('express');

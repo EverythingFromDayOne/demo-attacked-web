@@ -51,9 +51,9 @@ cd xss/stored        # or csrf/, clickjacking/, etc.
 npm install
 
 # 3. Start the servers — each in a separate terminal
-npm run victim         # vulnerable server
-npm run attacker       # attacker server
-npm run victim-protected  # protected server (for comparison)
+npm run vulnerable        # vulnerable server
+npm run guide             # attacker/guide server
+npm run secure            # protected server (for comparison)
 ```
 
 Each attack's `README.md` has the exact walkthrough, vulnerable line references, and fix explanations.
@@ -201,6 +201,9 @@ demo-attacked/
 ├── event-loop-blocking/       ← DevUtils CPU + ReDoS demo
 ├── jwt-attacks/                 ← AuthVault JWT forgery demo
 ├── command-injection/           ← NetProbe exec() demo
+├── idor/                        ← PayrollHub sequential-ID demo
+├── path-traversal/              ← FileVault ../escape demo
+├── mass-assignment/             ← ProfileHub Object.assign demo
 └── prompts/                   ← one canonical .md per attack
     ├── xss.md
     ├── csrf.md

@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/xss/svg-upload && npm install && npm run victim
- * Terminal 2: cd demo-attacked/xss/svg-upload && npm run attacker
+ * Terminal 1: cd demo-attacked/xss/svg-upload && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/xss/svg-upload && npm run guide
  *
  * Attack sequence:
  * 1. http://localhost:3008        ← Attacker dashboard — download payload.svg here

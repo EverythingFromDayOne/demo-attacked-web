@@ -1,5 +1,5 @@
 /*
- * Terminal 1: cd demo-attacked/prototype-pollution && npm install && npm run victim
+ * Terminal 1: cd demo-attacked/prototype-pollution && npm install && npm run vulnerable
  * Attack guide: npm run guide → http://localhost:3029
  */
 

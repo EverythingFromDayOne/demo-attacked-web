@@ -482,7 +482,7 @@ npm install
 
 ### Attack Walkthrough
 
-**Terminal 1:** `npm run victim`
+**Terminal 1:** `npm run vulnerable`
 **Terminal 2:** `npm run guide`
 
 1. Open **localhost:3028** — note the prototype status indicator (🟢 clean)

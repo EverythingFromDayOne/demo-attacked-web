@@ -36,9 +36,9 @@ npm install   # installs better-sqlite3 (compiles native bindings — takes ~30s
 Three terminals:
 
 ```
-npm run victim           # :3025
+npm run vulnerable           # :3025
 npm run guide            # :3026
-npm run victim-protected # :3027
+npm run secure # :3027
 ```
 
 ---

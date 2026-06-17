@@ -1,10 +1,10 @@
 /*
  * How to Run (protected / fixed version):
  *
- * Terminal 1: cd demo-attacked/xss/reflected && npm run victim-protected
- * Terminal 2: cd demo-attacked/xss/reflected && npm run attacker
+ * Terminal 1: cd demo-attacked/xss/reflected && npm run secure
+ * Terminal 2: cd demo-attacked/xss/reflected && npm run guide
  *
- * Compare with the vulnerable server (npm run victim on port 3004):
+ * Compare with the vulnerable server (npm run vulnerable on port 3004):
  *   http://localhost:3006        ← Protected ShopNest storefront
  *   http://localhost:3006/search?q=<script>...</script>
  *

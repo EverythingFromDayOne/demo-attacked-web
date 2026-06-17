@@ -539,9 +539,9 @@ npm install
 
 ### Attack Walkthrough
 
-**Terminal 1:** `npm run victim`
-**Terminal 2:** `npm run console`
-**Terminal 3:** `npm run victim-protected`
+**Terminal 1:** `npm run vulnerable`
+**Terminal 2:** `npm run guide`
+**Terminal 3:** `npm run secure`
 
 1. Open **localhost:3032** — the attack console. Both health monitors show ● ok
 2. Click **⚡ Fire CPU Attack → :3031** with 50,000,000 iterations

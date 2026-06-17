@@ -4,9 +4,9 @@
 
 | Port | Role | File | npm script |
 |------|------|------|------------|
-| 3005 | Vulnerable victim | `victim-server.js` | `npm run victim` |
-| 3006 | Attacker collector | `attacker-server.js` | `npm run attacker` |
-| 3007 | Protected victim | `victim-server-protected.js` | `npm run victim-protected` |
+| 3005 | Vulnerable victim | `victim-server.js` | `npm run vulnerable` |
+| 3006 | Attacker collector | `attacker-server.js` | `npm run guide` |
+| 3007 | Protected victim | `victim-server-protected.js` | `npm run secure` |
 
 ## Attack Flow
 
@@ -29,8 +29,8 @@ This illustrates that XSS is not always a frontend developer mistake. A perfectl
 
 ## How to Run
 
-1. Terminal 1: `cd demo-attacked/xss/svg-upload && npm run victim`
-2. Terminal 2: `cd demo-attacked/xss/svg-upload && npm run attacker`
+1. Terminal 1: `cd demo-attacked/xss/svg-upload && npm run vulnerable`
+2. Terminal 2: `cd demo-attacked/xss/svg-upload && npm run guide`
 3. Open `http://localhost:3006` — attacker dashboard. Click "⬇ Download payload.svg".
 4. Open `http://localhost:3005` — ConnectHub.
 5. Upload `payload.svg` as your profile avatar via the upload form.

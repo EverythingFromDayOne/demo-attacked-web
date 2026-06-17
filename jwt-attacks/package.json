@@ -4,9 +4,9 @@
   "description": "JWT attacks security education demo — AuthVault",
   "main": "victim-server.js",
   "scripts": {
-    "victim": "node victim-server.js",
+    "vulnerable": "node victim-server.js",
     "guide": "node attack-guide-server.js",
-    "victim-protected": "node victim-server-protected.js"
+    "secure": "node victim-server-protected.js"
   },
   "dependencies": {
     "express": "^4.18.2",

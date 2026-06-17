@@ -1,7 +1,7 @@
 /*
  * How to Run:
  *
- * Terminal 2: cd demo-attacked/ssrf && npm run internal
+ * Terminal 2: cd demo-attacked/ssrf && npm run guide
  *
  * Internal services registry:
  * http://localhost:3020  ← private microservice (SSRF target in the demo)

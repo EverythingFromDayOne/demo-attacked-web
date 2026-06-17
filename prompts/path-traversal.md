@@ -454,9 +454,9 @@ if (!requestedPath.startsWith(uploadsDir + path.sep)) {
 ```bash
 cd demo-attacked/path-traversal
 npm install
-npm run victim           # :3043
-npm run attacker         # :3044
-npm run victim-protected # :3045
+npm run vulnerable           # :3043
+npm run guide         # :3044
+npm run secure # :3045
 ```
 
 ### Walkthrough

@@ -367,7 +367,7 @@ npm install   # installs better-sqlite3 (compiles native bindings — takes ~30s
 
 ### Attack Walkthrough — Data Extraction
 
-1. Terminal 1: `npm run victim`
+1. Terminal 1: `npm run vulnerable`
 2. Open **localhost:3025**
 3. Search for `javascript` — see normal results
 4. Search for `' UNION SELECT id,username,password,email FROM users--`

@@ -37,14 +37,14 @@ const SWITCHER_CSS = `
       border-color: #fff;
     }
     .target-switcher .btn-protected {
-      background: #dc2626;
+      background: #16a34a;
       color: #fff;
-      border-color: #dc2626;
+      border-color: #16a34a;
     }
     .target-switcher .btn-protected.active {
-      background: #ef4444;
+      background: #15803d;
       color: #fff;
-      border-color: #ef4444;
+      border-color: #15803d;
     }`;
 
 function buildGuideHtml() {
@@ -355,7 +355,7 @@ const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
       <pre>1. Log in at :3034 as alice → copy the token
 2. Go to :3034 — click "Sign Out" → token is blacklisted
 3. Try to use the old token in the API test below → 401 "Token has been revoked"
-4. Now restart the :3034 server (Ctrl+C, npm run victim)
+4. Now restart the :3034 server (Ctrl+C, npm run vulnerable)
 5. Try the same old token again → it works — the denylist was in memory, now gone</pre>
     </div>
     <div style="margin-top:1rem;display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center">

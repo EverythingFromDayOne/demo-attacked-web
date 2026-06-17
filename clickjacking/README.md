@@ -29,8 +29,8 @@ Account deleted. Victim sees nothing unusual until they try to log in.
 ## Attack Walkthrough
 
 1. `cd demo-attacked/clickjacking && npm install`
-2. Terminal 1: `npm run victim` → CloudVault at **localhost:3013**
-3. Terminal 2: `npm run attacker` → Attacker at **localhost:3014**
+2. Terminal 1: `npm run vulnerable` → CloudVault at **localhost:3013**
+3. Terminal 2: `npm run guide` → Attacker at **localhost:3014**
 4. Open **localhost:3013** directly — note you have 6 files stored.
 5. Now open **localhost:3014** — you see a CloudBoost upgrade promotion.
 6. Click **"🔍 Show Overlay"** in the bottom-right corner — you can now see the transparent CloudVault iframe underneath, with "Delete All Files" aligned under the green button.
@@ -42,7 +42,7 @@ Account deleted. Victim sees nothing unusual until they try to log in.
 
 ## Protected Demo
 
-1. Terminal 3: `npm run victim-protected` → protected CloudVault at **localhost:3015**
+1. Terminal 3: `npm run secure` → protected CloudVault at **localhost:3015**
 2. On the attacker page, click **"Protected (:3015)"** in the bottom-left to swap the iframe target.
 3. The iframe goes blank. Open browser DevTools console — see the X-Frame-Options refusal error.
 4. A message may appear: "🛡️ Iframe blocked — target server sent X-Frame-Options: DENY"

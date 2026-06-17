@@ -38,16 +38,16 @@ npm install
 Three terminals:
 
 ```
-npm run victim           # :3028
+npm run vulnerable           # :3028
 npm run guide            # :3029
-npm run victim-protected # :3030
+npm run secure # :3030
 ```
 
 ---
 
 ## Attack Walkthrough
 
-**Terminal 1:** `npm run victim`  
+**Terminal 1:** `npm run vulnerable`  
 **Terminal 2:** `npm run guide`
 
 1. Open **localhost:3028** — note the prototype status indicator (🟢 clean)

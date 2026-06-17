@@ -1,6 +1,6 @@
 /*
- * Terminal 1: cd demo-attacked/event-loop-blocking && npm install && npm run victim
- * Attack console: npm run console → http://localhost:3032
+ * Terminal 1: cd demo-attacked/event-loop-blocking && npm install && npm run vulnerable
+ * Attack console: npm run guide → http://localhost:3032
  */
 
 const express = require('express');

@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/event-loop-blocking && npm run victim-protected
+ * Terminal 3: cd demo-attacked/event-loop-blocking && npm run secure
  */
 
 const express = require('express');

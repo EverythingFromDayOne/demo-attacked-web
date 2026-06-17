@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/path-traversal && npm run victim-protected
+ * Terminal 3: cd demo-attacked/path-traversal && npm run secure
  */
 
 const { createFileVaultApp } = require('./filevault-app');

@@ -1,8 +1,8 @@
 /*
  * How to Run (protected):
  *
- * Terminal 1: cd demo-attacked/clickjacking && npm run victim-protected
- * Terminal 2: cd demo-attacked/clickjacking && npm run attacker
+ * Terminal 1: cd demo-attacked/clickjacking && npm run secure
+ * Terminal 2: cd demo-attacked/clickjacking && npm run guide
  *
  * Compare:
  *   http://localhost:3013  ← vulnerable (iframes allowed)

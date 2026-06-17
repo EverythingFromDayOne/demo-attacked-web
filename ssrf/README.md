@@ -28,8 +28,8 @@ Real-world target: http://169.254.169.254/ → AWS IAM credentials
 ## Attack Walkthrough
 
 1. `cd demo-attacked/ssrf && npm install`
-2. Terminal 1: `npm run victim` → DevShare at **localhost:3019**
-3. Terminal 2: `npm run internal` → Internal API at **localhost:3020**
+2. Terminal 1: `npm run vulnerable` → DevShare at **localhost:3019**
+3. Terminal 2: `npm run guide` → Internal API at **localhost:3020**
 4. Open **localhost:3020** — you see the attack console with available endpoints.
 5. Copy `http://localhost:3020/internal/env`.
 6. Open **localhost:3019**, paste the URL into the preview form, click **Generate Preview →**.
@@ -42,7 +42,7 @@ Use the victim switcher on the attack console (bottom-left) to open **3019** or 
 
 ## Protected Demo
 
-1. Terminal 3: `npm run victim-protected` → protected DevShare at **localhost:3021**
+1. Terminal 3: `npm run secure` → protected DevShare at **localhost:3021**
 2. Paste the same `http://localhost:3020/internal/env` URL.
 3. Result: **⛔ Blocked: Private/loopback address blocked**
 

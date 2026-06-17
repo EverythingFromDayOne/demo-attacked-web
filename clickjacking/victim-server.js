@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/clickjacking && npm install && npm run victim
- * Terminal 2: cd demo-attacked/clickjacking && npm run attacker
+ * Terminal 1: cd demo-attacked/clickjacking && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/clickjacking && npm run guide
  *
  * Attack sequence:
  * 1. http://localhost:3013  ← CloudVault dashboard (6 files)

@@ -57,9 +57,9 @@ if (!requestedPath.startsWith(uploadsDir + path.sep)) {
 ```bash
 cd demo-attacked/path-traversal
 npm install
-npm run victim           # terminal 1 → localhost:3043
-npm run attacker         # terminal 2 → localhost:3044
-npm run victim-protected # terminal 3 → localhost:3045
+npm run vulnerable           # terminal 1 → localhost:3043
+npm run guide         # terminal 2 → localhost:3044
+npm run secure # terminal 3 → localhost:3045
 ```
 
 ### Walkthrough

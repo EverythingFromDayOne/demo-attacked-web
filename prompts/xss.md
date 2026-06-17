@@ -174,8 +174,8 @@ Copy victim-server.js structure, apply all fixes.
 
 **How-to-run comment block at top:**
 ```
-Terminal 1: cd demo-attacked/xss/stored && npm run victim-protected
-Terminal 2: cd demo-attacked/xss/stored && npm run attacker
+Terminal 1: cd demo-attacked/xss/stored && npm run secure
+Terminal 2: cd demo-attacked/xss/stored && npm run guide
 ```
 
 **Fix 1 — Cookie httpOnly: true:**
@@ -829,8 +829,8 @@ The Fix (exact lines), Edge Cases and What Still Fails, This Demo in Real Framew
 
 **How to Run (exact steps):**
 1. Open two terminals
-2. Terminal 1: `cd demo-attacked/xss/stored && npm run victim`
-3. Terminal 2: `cd demo-attacked/xss/stored && npm run attacker`
+2. Terminal 1: `cd demo-attacked/xss/stored && npm run vulnerable`
+3. Terminal 2: `cd demo-attacked/xss/stored && npm run guide`
 4. Open `http://localhost:3001/admin` first — this sets the agent_session cookie
 5. Open `http://localhost:3002` — attacker dashboard
 6. Open `http://localhost:3001` — customer portal

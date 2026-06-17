@@ -60,9 +60,9 @@ const payslip = db.prepare(
 ```bash
 cd demo-attacked/idor
 npm install
-npm run victim           # terminal 1 → localhost:3040
-npm run attacker         # terminal 2 → localhost:3041
-npm run victim-protected # terminal 3 → localhost:3042
+npm run vulnerable           # terminal 1 → localhost:3040
+npm run guide         # terminal 2 → localhost:3041
+npm run secure # terminal 3 → localhost:3042
 ```
 
 ### Walkthrough

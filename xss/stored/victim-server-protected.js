@@ -1,8 +1,8 @@
 /*
  * How to Run (protected / fixed version):
  *
- * Terminal 1: cd demo-attacked/xss/stored && npm run victim-protected
- * Terminal 2: cd demo-attacked/xss/stored && npm run attacker
+ * Terminal 1: cd demo-attacked/xss/stored && npm run secure
+ * Terminal 2: cd demo-attacked/xss/stored && npm run guide
  *
  * Compare with vulnerable server:
  *   http://localhost:3001/admin    ← vulnerable (httpOnly=false, cookie stolen)

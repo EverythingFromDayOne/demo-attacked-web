@@ -39,9 +39,9 @@ npm install
 Three terminals:
 
 ```
-npm run victim           # :3031
-npm run console          # :3032
-npm run victim-protected # :3033
+npm run vulnerable           # :3031
+npm run guide          # :3032
+npm run secure # :3033
 ```
 
 ---

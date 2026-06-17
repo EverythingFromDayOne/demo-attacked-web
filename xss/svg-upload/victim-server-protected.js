@@ -1,10 +1,10 @@
 /*
  * How to Run (protected / fixed version):
  *
- * Terminal 1: cd demo-attacked/xss/svg-upload && npm run victim-protected
- * Terminal 2: cd demo-attacked/xss/svg-upload && npm run attacker
+ * Terminal 1: cd demo-attacked/xss/svg-upload && npm run secure
+ * Terminal 2: cd demo-attacked/xss/svg-upload && npm run guide
  *
- * Compare with the vulnerable server (npm run victim on port 3007):
+ * Compare with the vulnerable server (npm run vulnerable on port 3007):
  *   http://localhost:3009        ← Protected ConnectHub
  *
  * Fixes applied:

@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/ssrf && npm install && npm run victim
- * Terminal 2: cd demo-attacked/ssrf && npm run internal
+ * Terminal 1: cd demo-attacked/ssrf && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/ssrf && npm run guide
  *
  * Attack sequence:
  * 1. http://localhost:3020  ← SSRF attack console — copy internal URLs

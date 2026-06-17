@@ -1,7 +1,7 @@
 /*
  * How to Run:
  *
- * Terminal 3: cd demo-attacked/ssrf && npm run victim-protected
+ * Terminal 3: cd demo-attacked/ssrf && npm run secure
  *
  * Protected demo:
  * 1. http://localhost:3021  ← DevShare (protected)

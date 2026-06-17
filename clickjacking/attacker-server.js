@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/clickjacking && npm install && npm run victim
- * Terminal 2: cd demo-attacked/clickjacking && npm run attacker
+ * Terminal 1: cd demo-attacked/clickjacking && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/clickjacking && npm run guide
  *
  * Attack sequence:
  * 1. http://localhost:3013  ← CloudVault (note 6 files)
@@ -185,12 +185,12 @@ const LURE_HTML = `<!DOCTYPE html>
       border-color: #fff;
     }
     .target-switcher .btn-protected {
-      background: #dc2626;
+      background: #16a34a;
       color: #fff;
-      border-color: #dc2626;
+      border-color: #16a34a;
     }
     .target-switcher .btn-protected.active {
-      background: #ef4444;
+      background: #15803d;
       color: #fff;
       border-color: #ef4444;
     }

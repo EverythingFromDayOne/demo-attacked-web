@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/idor && npm run victim-protected
+ * Terminal 3: cd demo-attacked/idor && npm run secure
  */
 
 const { createPayrollApp } = require('./payroll-app');

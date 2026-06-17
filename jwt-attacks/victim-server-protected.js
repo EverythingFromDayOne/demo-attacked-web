@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/jwt-attacks && npm run victim-protected
+ * Terminal 3: cd demo-attacked/jwt-attacks && npm run secure
  */
 
 const express = require('express');

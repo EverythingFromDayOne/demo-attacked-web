@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/mass-assignment && npm run victim-protected
+ * Terminal 3: cd demo-attacked/mass-assignment && npm run secure
  */
 
 const { createProfileHubApp } = require('./profilehub-app');

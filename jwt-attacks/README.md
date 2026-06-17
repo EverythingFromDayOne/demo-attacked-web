@@ -41,9 +41,9 @@ npm install
 Three terminals:
 
 ```
-npm run victim           # :3034
+npm run vulnerable           # :3034
 npm run guide            # :3035
-npm run victim-protected # :3036
+npm run secure # :3036
 ```
 
 ---
@@ -99,7 +99,7 @@ const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
 
 1. Log in at **localhost:3034** → copy the token → click **Sign Out**
 2. Go to the attack guide (3035) → paste the old token in Step 0 → click **Test Revoked Token on :3034** → `✓ Token rejected: "Token has been revoked"`
-3. Restart the `:3034` server (`Ctrl+C`, `npm run victim`) → test again → token accepted again
+3. Restart the `:3034` server (`Ctrl+C`, `npm run vulnerable`) → test again → token accepted again
 4. This demonstrates: **in-memory denylists are not persistent** — production requires Redis or a database.
 
 ---

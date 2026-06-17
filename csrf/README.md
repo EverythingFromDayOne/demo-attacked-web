@@ -29,8 +29,8 @@ $9,000 transferred. Victim never clicked anything on the bank's site.
 ## Attack Walkthrough
 
 1. `cd demo-attacked/csrf && npm install`
-2. Terminal 1: `npm run victim` → NetBank at **localhost:3010**
-3. Terminal 2: `npm run attacker` → Attacker at **localhost:3011**
+2. Terminal 1: `npm run vulnerable` → NetBank at **localhost:3010**
+3. Terminal 2: `npm run guide` → Attacker at **localhost:3011**
 4. Open **localhost:3010** → log in as `john.doe` / `password123`
 5. Note balance: **$50,000.00**
 6. Open **localhost:3011** → read the attack flow, then click **Open Lure Page**
@@ -137,13 +137,13 @@ The browser refuses to attach the cookie to requests that originated from a diff
 
 ```bash
 # Terminal 1 — vulnerable
-npm run victim          # port 3010
+npm run vulnerable          # port 3010
 
 # Terminal 2 — protected
-npm run victim-protected  # port 3012
+npm run secure  # port 3012
 
 # Terminal 3 — attacker (targets port 3010 by default)
-npm run attacker        # port 3011
+npm run guide        # port 3011
 ```
 
 Log into both NetBank instances, then open the lure page. The vulnerable account loses $9,001; the protected account balance stays at $50,000.

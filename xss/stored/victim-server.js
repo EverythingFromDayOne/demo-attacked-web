@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/xss/stored && npm install && npm run victim
- * Terminal 2: cd demo-attacked/xss/stored && npm run attacker
+ * Terminal 1: cd demo-attacked/xss/stored && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/xss/stored && npm run guide
  *
  * Then open:
  *   http://localhost:3001/admin  ← Open first to set the agent cookie
@@ -47,7 +47,6 @@ app.get('/', (req, res) => {
 
 app.get('/admin', (req, res) => {
   // ⚠️ VULNERABILITY: httpOnly: false — JavaScript can read this cookie via document.cookie
-  // ✅ PROTECTED: Set httpOnly: true (see victim-server-protected.js)
   res.cookie('agent_session', 'AgentJohn_s3ss10n_t0k3n_XYZ789', { path: '/', httpOnly: false });
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
@@ -59,8 +58,7 @@ app.post('/api/tickets', (req, res) => {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
-  // VULNERABILITY: raw user input stored and later rendered as HTML
-  // ✅  FIX: Sanitize/encode all user input before storage and always render with textContent
+  // ⚠️ VULNERABILITY: raw user input stored and later rendered as HTML
   const ticket = {
     id: uuidv4(),
     name,

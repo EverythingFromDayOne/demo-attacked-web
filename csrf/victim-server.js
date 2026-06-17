@@ -1,8 +1,8 @@
 /*
  * How to Run:
  *
- * Terminal 1: cd demo-attacked/csrf && npm install && npm run victim
- * Terminal 2: cd demo-attacked/csrf && npm run attacker
+ * Terminal 1: cd demo-attacked/csrf && npm install && npm run vulnerable
+ * Terminal 2: cd demo-attacked/csrf && npm run guide
  *
  * Attack sequence:
  * 1. http://localhost:3010  ← Log in as john.doe / password123

@@ -439,8 +439,8 @@ Victim sees "session expired" login prompt, enters credentials → stolen
 ### Attack walkthrough — Reverse Tabnabbing
 
 1. `cd demo-attacked/reverse-tabnabbing && npm install`
-2. Terminal 1: `npm run victim` → TechBlog at **localhost:3016**
-3. Terminal 2: `npm run attacker` → Attacker at **localhost:3017**
+2. Terminal 1: `npm run vulnerable` → TechBlog at **localhost:3016**
+3. Terminal 2: `npm run guide` → Attacker at **localhost:3017**
 4. Open **localhost:3016** — you are logged in as Alex Reader.
 5. Click **"How AI Is Reshaping Frontend Development ↗"** — a new tab opens.
 6. Read a sentence or two (the tab swap has already happened silently).
@@ -451,7 +451,7 @@ Victim sees "session expired" login prompt, enters credentials → stolen
 
 ### Protected demo — Reverse Tabnabbing
 
-1. Terminal 3: `npm run victim-protected` → protected TechBlog at **localhost:3018**
+1. Terminal 3: `npm run secure` → protected TechBlog at **localhost:3018**
 2. Open **localhost:3018**, click the same external article.
 3. Switch back — original tab is still on TechBlog, untouched.
 4. On the attacker page, `window.opener` is `null` — the redirect silently failed.

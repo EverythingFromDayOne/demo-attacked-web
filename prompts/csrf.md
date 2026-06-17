@@ -315,8 +315,8 @@ $9,000 transferred. Victim never clicked anything on the bank's site.
 ### Attack walkthrough (step by step)
 
 1. `cd demo-attacked/csrf && npm install`
-2. Terminal 1: `npm run victim` → NetBank at localhost:3010
-3. Terminal 2: `npm run attacker` → Attacker at localhost:3011
+2. Terminal 1: `npm run vulnerable` → NetBank at localhost:3010
+3. Terminal 2: `npm run guide` → Attacker at localhost:3011
 4. Open **localhost:3010** → log in as `john.doe` / `password123`
 5. Note balance: **$50,000.00**
 6. Open **localhost:3011** → read the attack flow, then click "Open Lure Page"

@@ -1,6 +1,6 @@
 /*
- * Terminal 1: cd demo-attacked/path-traversal && npm install && npm run victim
- * Attack guide: npm run attacker → http://localhost:3044
+ * Terminal 1: cd demo-attacked/path-traversal && npm install && npm run vulnerable
+ * Attack guide: npm run guide → http://localhost:3044
  */
 
 const { createFileVaultApp } = require('./filevault-app');

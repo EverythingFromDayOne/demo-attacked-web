@@ -36,19 +36,19 @@ All 9 servers can run simultaneously — all ports are unique.
 
 ```bash
 # Stored XSS
-cd xss/stored   && npm install && npm run victim          # :3001
-cd xss/stored   && npm run attacker                       # :3002
-cd xss/stored   && npm run victim-protected               # :3009
+cd xss/stored   && npm install && npm run vulnerable      # :3001
+cd xss/stored   && npm run guide                          # :3002
+cd xss/stored   && npm run secure                         # :3009
 
 # Reflected XSS
-cd xss/reflected && npm install && npm run victim         # :3003
-cd xss/reflected && npm run attacker                      # :3004
-cd xss/reflected && npm run victim-protected              # :3008
+cd xss/reflected && npm install && npm run vulnerable     # :3003
+cd xss/reflected && npm run guide                         # :3004
+cd xss/reflected && npm run secure                        # :3008
 
 # SVG Upload XSS
-cd xss/svg-upload && npm install && npm run victim        # :3005
-cd xss/svg-upload && npm run attacker                     # :3006
-cd xss/svg-upload && npm run victim-protected             # :3007
+cd xss/svg-upload && npm install && npm run vulnerable    # :3005
+cd xss/svg-upload && npm run guide                        # :3006
+cd xss/svg-upload && npm run secure                       # :3007
 ```
 
 ---

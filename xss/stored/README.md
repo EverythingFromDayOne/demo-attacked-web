@@ -4,9 +4,9 @@
 
 | Port | Role | File | npm script |
 |------|------|------|------------|
-| 3001 | Vulnerable victim | `victim-server.js` | `npm run victim` |
-| 3002 | Attacker collector | `attacker-server.js` | `npm run attacker` |
-| 3009 | Protected victim | `victim-server-protected.js` | `npm run victim-protected` |
+| 3001 | Vulnerable victim | `victim-server.js` | `npm run vulnerable` |
+| 3002 | Attacker collector | `attacker-server.js` | `npm run guide` |
+| 3009 | Protected victim | `victim-server-protected.js` | `npm run secure` |
 
 ## Attack Flow
 
@@ -29,8 +29,8 @@ This pattern is common in support ticket systems, comment sections, forum posts,
 ## How to Run
 
 1. Open two terminals.
-2. Terminal 1: `cd demo-attacked/xss/stored && npm run victim`
-3. Terminal 2: `cd demo-attacked/xss/stored && npm run attacker`
+2. Terminal 1: `cd demo-attacked/xss/stored && npm run vulnerable`
+3. Terminal 2: `cd demo-attacked/xss/stored && npm run guide`
 4. Open `http://localhost:3001/admin` first — this sets the `agent_session` cookie.
 5. Open `http://localhost:3002` in a separate window — attacker dashboard.
 6. Open `http://localhost:3001` in a third tab — customer portal.

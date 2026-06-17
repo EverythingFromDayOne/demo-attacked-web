@@ -1,5 +1,5 @@
 /*
- * Terminal 3: cd demo-attacked/prototype-pollution && npm run victim-protected
+ * Terminal 3: cd demo-attacked/prototype-pollution && npm run secure
  */
 
 const express = require('express');
