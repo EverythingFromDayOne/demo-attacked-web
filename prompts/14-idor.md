@@ -4,12 +4,12 @@
 
 | Server type | Theme |
 |-------------|-------|
-| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Attacker server / Attack guide | Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` verbatim — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. The HTML lives in `public/guide.html`, served via `res.sendFile`. |
 | Internal / target server | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
 | Victim servers | Realistic product UI matching their brand |
 
 **Attacker/guide pages — non-negotiable rules:**
-- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` **verbatim**. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
 - Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block). These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
@@ -243,7 +243,7 @@ Apply `class="login-input"` to both `<input type="text">` and `<input type="pass
 ```json
 {
   "scripts": {
-    "victim": "node victim-server.js"
+    "vulnerable": "node victim-server.js"
   }
 }
 ```
@@ -254,7 +254,7 @@ Apply `class="login-input"` to both `<input type="text">` and `<input type="pass
 
 ### File: `idor/attack-guide-server.js`
 
-Open `reverse-tabnabbing/attacker-server.js`. Find the `DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim** — every rule, every value, character for character. Do not rewrite, summarize, or recreate it.
+Open `reverse-tabnabbing/public/guide.html`. Copy its entire `<style>` block **verbatim** — every rule, every value, character for character. Do not rewrite, summarize, or recreate it.
 
 ### Page content
 
@@ -501,7 +501,7 @@ pre.decoded-box {
 **`package.json` scripts:**
 ```json
 {
-  "scripts": { "attacker": "node attack-guide-server.js" }
+  "scripts": { "guide": "node attack-guide-server.js" }
 }
 ```
 
@@ -550,7 +550,7 @@ When a cross-user ID is requested, show in the UI:
 **`package.json` scripts:**
 ```json
 {
-  "scripts": { "victim-protected": "node victim-protected-server.js" }
+  "scripts": { "secure": "node victim-protected-server.js" }
 }
 ```
 
@@ -563,9 +563,9 @@ When a cross-user ID is requested, show in the UI:
   "name": "idor-demo",
   "version": "1.0.0",
   "scripts": {
-    "victim":           "node victim-server.js",
-    "attacker":         "node attack-guide-server.js",
-    "victim-protected": "node victim-protected-server.js"
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attack-guide-server.js",
+    "secure":      "node victim-protected-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",

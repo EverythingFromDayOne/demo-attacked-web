@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetBank — Online Banking</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .demo-banner {
+      border-bottom: 2px solid;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.85rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    header {
+      background: #0f172a;
+      color: #fff;
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 1.35rem; font-weight: 700; }
+    .header-right { font-size: 0.9rem; color: #94a3b8; }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #475569;
+      color: #e2e8f0;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-left: 1rem;
+    }
+    .btn-logout:hover { background: #1e293b; }
+    main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 2rem;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.15rem; margin-bottom: 1.25rem; color: #0f172a; }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem; }
+    input {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    input:focus { outline: 2px solid #16a34a; border-color: #16a34a; }
+    .btn-primary {
+      background: #16a34a;
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .btn-primary:hover { background: #15803d; }
+    .btn-transfer {
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    .btn-transfer:hover { background: #1e293b; }
+    .login-error { color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+    .login-error.visible { display: block; }
+    .balance-amount {
+      font-size: 2.75rem;
+      font-weight: 700;
+      color: #16a34a;
+      margin: 0.5rem 0 0.25rem;
+    }
+    .balance-label { color: #64748b; font-size: 0.85rem; }
+    .account-meta { color: #475569; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .txn-list { list-style: none; }
+    .txn-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.9rem;
+    }
+    .txn-list li:last-child { border-bottom: none; }
+    .txn-credit { color: #16a34a; font-weight: 600; }
+    .txn-debit { color: #dc2626; font-weight: 600; }
+    .txn-days { color: #94a3b8; font-size: 0.8rem; }
+    .transfer-msg { font-size: 0.85rem; margin-top: 0.75rem; display: none; }
+    .transfer-msg.visible { display: block; }
+    .transfer-msg.error { color: #dc2626; }
+    .transfer-msg.success { color: #16a34a; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="demo-banner" id="demo-banner"></div>
+
+  <header>
+    <div class="logo">NetBank 🏦</div>
+    <div class="header-right hidden" id="header-user">
+      <span id="header-name">John Doe</span>
+      <button class="btn-logout" id="btn-logout" type="button">Sign Out</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="login-page">
+      <div class="card" style="max-width:400px;margin:2rem auto;">
+        <h2>Sign in to NetBank</h2>
+        <p id="login-error" class="login-error">Invalid credentials. Try john.doe / password123</p>
+        <form id="login-form">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required placeholder="john.doe" autocomplete="username">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="••••••••" autocomplete="current-password">
+          <button class="btn-primary" type="submit">Sign In</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="dashboard-page" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Account Summary</h2>
+          <p class="account-meta" id="owner-name">John Doe</p>
+          <p class="account-meta">Checking <span id="account-no">••••4821</span></p>
+          <div class="balance-amount" id="balance-display">$50,000.00</div>
+          <p class="balance-label">Available balance</p>
+        </div>
+
+        <div class="card">
+          <h2>Wire Transfer</h2>
+          <form id="transfer-form">
+            <label for="recipient">Recipient Name</label>
+            <input type="text" id="recipient" name="recipient" required placeholder="Jane Smith">
+            <label for="account">Recipient Account No.</label>
+            <input type="text" id="account" name="account" required placeholder="ACC-1234-5678">
+            <label for="amount">Amount USD</label>
+            <input type="number" id="amount" name="amount" min="1" step="0.01" required placeholder="100.00">
+            <button class="btn-transfer" type="submit">Transfer Now</button>
+          </form>
+          <p id="transfer-msg" class="transfer-msg"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Recent Transactions</h2>
+        <ul class="txn-list" id="txn-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function formatMoney(n) {
+      return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function setCsrfToken(token) {
+      if (!token) return;
+      var form = document.getElementById('transfer-form');
+      var field = document.getElementById('csrf-field');
+      if (!field) {
+        field = document.createElement('input');
+        field.type = 'hidden';
+        field.name = '_csrf';
+        field.id = 'csrf-field';
+        form.insertBefore(field, form.firstChild);
+      }
+      field.value = token;
+    }
+
+    function showLogin() {
+      document.getElementById('login-page').classList.remove('hidden');
+      document.getElementById('dashboard-page').classList.add('hidden');
+      document.getElementById('header-user').classList.add('hidden');
+    }
+
+    function showDashboard() {
+      document.getElementById('login-page').classList.add('hidden');
+      document.getElementById('dashboard-page').classList.remove('hidden');
+      document.getElementById('header-user').classList.remove('hidden');
+    }
+
+    function renderTransactions(transactions) {
+      var list = document.getElementById('txn-list');
+      list.textContent = '';
+      transactions.forEach(function (txn) {
+        var li = document.createElement('li');
+        var left = document.createElement('span');
+        left.textContent = txn.description;
+        var right = document.createElement('span');
+        var sign = txn.type === 'credit' ? '+' : '-';
+        right.textContent = sign + formatMoney(txn.amount);
+        right.className = txn.type === 'credit' ? 'txn-credit' : 'txn-debit';
+        if (txn.daysAgo !== undefined && txn.daysAgo > 0) {
+          var days = document.createElement('div');
+          days.className = 'txn-days';
+          days.textContent = txn.daysAgo + ' days ago';
+          left.appendChild(document.createElement('br'));
+          left.appendChild(days);
+        }
+        li.appendChild(left);
+        li.appendChild(right);
+        list.appendChild(li);
+      });
+    }
+
+    async function loadAccount() {
+      try {
+        var res = await fetch('/api/account');
+        if (res.status === 401) { showLogin(); return; }
+        var data = await res.json();
+        document.getElementById('balance-display').textContent = formatMoney(data.balance);
+        document.getElementById('owner-name').textContent = data.owner;
+        document.getElementById('account-no').textContent = data.accountNo;
+        if (data.csrfToken) setCsrfToken(data.csrfToken);
+        renderTransactions(data.transactions);
+        showDashboard();
+      } catch (e) {
+        showLogin();
+      }
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var err = document.getElementById('login-error');
+      err.classList.remove('visible');
+      var res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        })
+      });
+      var data = await res.json();
+      if (data.success) {
+        if (data.csrfToken) setCsrfToken(data.csrfToken);
+        loadAccount();
+      } else {
+        err.classList.add('visible');
+      }
+    });
+
+    document.getElementById('transfer-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var msg = document.getElementById('transfer-msg');
+      msg.classList.remove('visible', 'error', 'success');
+      var fd = new FormData(e.target);
+      var res = await fetch('/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(fd)
+      });
+      var data = await res.json();
+      if (data.success) {
+        msg.textContent = 'Transfer of ' + formatMoney(data.transaction.amount) + ' sent successfully.';
+        msg.classList.add('visible', 'success');
+        e.target.reset();
+        loadAccount();
+      } else {
+        msg.textContent = data.error || 'Transfer failed.';
+        msg.classList.add('visible', 'error');
+      }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', async function () {
+      await fetch('/api/logout');
+      showLogin();
+    });
+
+    loadAccount();
+  </script>
+  <script>
+    fetch('/api/config').then(r => r.json()).then(({ mode, port }) => {
+      const b = document.getElementById('demo-banner');
+      if (mode === 'protected') {
+        Object.assign(b.style, { background: '#d1fae5', borderColor: '#059669', color: '#065f46' });
+        b.textContent = '✅ Demo — Protected Mode (port ' + port + ')';
+      } else {
+        Object.assign(b.style, { background: '#fee2e2', borderColor: '#dc2626', color: '#991b1b' });
+        b.textContent = '⚠️ Demo — Vulnerable Mode (port ' + port + ')';
+      }
+    });
+  </script>
+</body>
+</html>

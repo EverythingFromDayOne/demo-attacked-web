@@ -6,7 +6,14 @@ Part of a security attack demonstration lab at https://github.com/EverythingFrom
 Previous demos: XSS (ports 3001–3009), CSRF (ports 3010–3012).
 This demo lives under `demo-attacked/clickjacking/` and uses ports 3013–3015.
 
-Tech stack: Node.js + Express. All HTML served as template literals from the server. Vanilla CSS and JS only.
+Tech stack: Node.js + Express. Vanilla CSS and JS only.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder. Servers use
+`res.sendFile(path.join(__dirname, 'public', 'index.html'))` for `GET /`. Victim and protected
+servers expose `GET /api/config → { mode, port }` for dynamic banner rendering, and
+`GET /api/files → [...]` so the dashboard file list is populated client-side (not SSR).
+Guide server exposes `GET /api/config → { victimPort, protectedPort }` for iframe src.
+No inline HTML template literals in server files.
 
 ---
 
@@ -17,6 +24,9 @@ demo-attacked/clickjacking/
 ├── victim-server.js            # CloudVault vulnerable   — port 3013
 ├── victim-server-protected.js  # CloudVault protected    — port 3015
 ├── attacker-server.js          # Attacker overlay page   — port 3014
+├── public/
+│   ├── index.html              # CloudVault dashboard (shared by victim + protected)
+│   └── guide.html              # Attacker overlay page
 ├── package.json
 └── .gitignore
 ```
@@ -35,10 +45,14 @@ node_modules/
 
 ## Package.json scripts
 
-```
-victim            → node victim-server.js
-attacker          → node attacker-server.js
-victim-protected  → node victim-server-protected.js
+```json
+{
+  "scripts": {
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attacker-server.js",
+    "secure":      "node victim-server-protected.js"
+  }
+}
 ```
 
 Dependencies: `express` only.
@@ -71,8 +85,9 @@ No login flow needed.
 Color scheme: dark navy (`#0f172a`) header, white cards, red accent for
 destructive actions. Logo: "CloudVault 🗄️".
 
-Red demo banner at top:
-`⚠️ VULNERABLE: No X-Frame-Options — this page can be loaded inside any iframe`
+Demo banner at top — color and text determined by `/api/config` response on `DOMContentLoaded`:
+- Vulnerable: red `⚠️ VULNERABLE: No X-Frame-Options — this page can be loaded inside any iframe`
+- Protected: green `✅ PROTECTED: X-Frame-Options: DENY — iframe embedding blocked`
 
 ### Dashboard layout
 
@@ -107,6 +122,26 @@ positioned at a predictable, fixed location — bottom-center of the main
 content area, with enough surrounding whitespace that the attacker can align
 an overlay button precisely over it. Use `margin: 2rem auto`, `display: block`,
 `width: 220px` so its position is stable.
+
+### Backend endpoints (both victim versions share the same `public/index.html`)
+
+**GET /api/config** — returns `{ mode: 'vulnerable', port: 3013 }` (victim) or `{ mode: 'protected', port: 3015 }` (protected server). The client uses `mode` to set the banner color.
+
+**GET /api/files** — returns the current file list as JSON:
+```json
+[
+  { "name": "Q2-Financial-Report.xlsx", "type": "Spreadsheet", "size": "2.4 MB", "modified": "2 days ago" },
+  { "name": "Product-Roadmap-2026.pdf",  "type": "PDF",         "size": "1.1 MB", "modified": "5 days ago" },
+  { "name": "Team-Photo-Offsite.jpg",    "type": "Image",       "size": "4.8 MB", "modified": "1 week ago" },
+  { "name": "Client-Contract-NDA.docx",  "type": "Document",    "size": "890 KB", "modified": "2 weeks ago" },
+  { "name": "Architecture-Diagram-v3.png","type": "Image",      "size": "3.2 MB", "modified": "3 weeks ago" },
+  { "name": "Backup-Config-prod.tar.gz",  "type": "Archive",    "size": "12.1 MB","modified": "1 month ago" }
+]
+```
+The "Delete All Files" action on the client calls `POST /api/files/delete-all`, then re-renders
+the empty file list. The server-side file list lives in an in-memory array (reset on restart).
+
+**GET /** — `res.sendFile(path.join(__dirname, 'public', 'index.html'))`
 
 ### HTTP headers (vulnerable version)
 

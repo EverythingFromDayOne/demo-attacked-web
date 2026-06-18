@@ -4,12 +4,12 @@
 
 | Server type | Theme |
 |-------------|-------|
-| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Attacker server / Attack guide | Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
 | Internal / target server | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
 | Victim servers | Realistic product UI matching their brand |
 
 **Attacker/guide pages — non-negotiable rules:**
-- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` **verbatim**. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
 - Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block). These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
@@ -185,7 +185,7 @@ document.getElementById('btn-logout').addEventListener('click', async function()
 **`package.json` scripts:**
 ```json
 {
-  "scripts": { "victim": "node victim-server.js" },
+  "scripts": { "vulnerable": "node victim-server.js" },
   "dependencies": { "express": "^4.18.2", "cors": "^2.8.5" }
 }
 ```
@@ -196,7 +196,7 @@ document.getElementById('btn-logout').addEventListener('click', async function()
 
 ### File: `path-traversal/attack-guide-server.js`
 
-Open `reverse-tabnabbing/attacker-server.js`. Find `DASHBOARD_HTML`. Copy its entire `<style>` block **verbatim**.
+Open `reverse-tabnabbing/public/guide.html`. Copy its entire `<style>` block **verbatim**.
 
 ### Page content
 
@@ -400,9 +400,9 @@ When traversal is attempted, show in the UI:
   "name": "path-traversal-demo",
   "version": "1.0.0",
   "scripts": {
-    "victim":           "node victim-server.js",
-    "attacker":         "node attack-guide-server.js",
-    "victim-protected": "node victim-protected-server.js"
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attack-guide-server.js",
+    "secure":      "node victim-protected-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",

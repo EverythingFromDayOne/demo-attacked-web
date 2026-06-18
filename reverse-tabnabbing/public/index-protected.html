@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechBlog — Tech News &amp; Insights</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #1e293b;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    #demo-banner {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.85rem;
+      text-align: center;
+      font-weight: 500;
+      border-bottom: 2px solid #059669;
+    }
+    header {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .logo {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #0f172a;
+      text-decoration: none;
+    }
+    nav { display: flex; gap: 1.75rem; }
+    nav a {
+      color: #64748b;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    nav a:hover { color: #0d9488; }
+    .user-badge {
+      background: #f0fdfa;
+      color: #0f766e;
+      border: 1px solid #99f6e4;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+    }
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      color: #0f172a;
+    }
+    .page-subtitle {
+      color: #64748b;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    .article-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    @media (max-width: 768px) {
+      .article-grid { grid-template-columns: 1fr; }
+    }
+    .article-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .article-card:hover {
+      border-color: #99f6e4;
+      box-shadow: 0 8px 24px rgba(13, 148, 136, 0.08);
+    }
+    .article-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.35;
+    }
+    .article-card h2 a {
+      color: #0f172a;
+      text-decoration: none;
+    }
+    .article-card h2 a:hover { color: #0d9488; }
+    .article-meta {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+    .read-link {
+      display: inline-block;
+      color: #0d9488;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+    .read-link:hover { text-decoration: underline; }
+    .external-badge {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      margin-left: 0.35rem;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div id="demo-banner"></div>
+  <header>
+    <a class="logo" href="/">TechBlog 📰</a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="#">Topics</a>
+      <a href="#">Newsletter</a>
+    </nav>
+    <div class="user-badge">👤 Alex Reader</div>
+  </header>
+  <main>
+    <h1 class="page-title">Latest Articles</h1>
+    <p class="page-subtitle">Curated reads for engineers, designers, and tech leaders.</p>
+
+    <div class="article-grid">
+      <article class="article-card">
+        <h2><a href="/articles/1">The Hidden Cost of Technical Debt</a></h2>
+        <div class="article-meta">12 min read · Engineering</div>
+        <a class="read-link" href="/articles/1">Read Article →</a>
+      </article>
+
+      <article class="article-card">
+        <h2>
+          <a href="http://localhost:3017" target="_blank" rel="noopener noreferrer">
+            How AI Is Reshaping Frontend Development
+          </a>
+          <span class="external-badge">↗ External</span>
+        </h2>
+        <div class="article-meta">8 min read · AI &amp; Tools</div>
+        <!-- ✅ FIX: rel="noopener noreferrer" prevents window.opener access -->
+        <a href="http://localhost:3017" target="_blank" rel="noopener noreferrer" class="read-link">
+          Read Full Article →
+        </a>
+      </article>
+
+      <article class="article-card">
+        <h2><a href="/articles/3">Building Resilient Microservices</a></h2>
+        <div class="article-meta">15 min read · Architecture</div>
+        <a class="read-link" href="/articles/3">Read Article →</a>
+      </article>
+
+      <article class="article-card">
+        <h2><a href="/articles/4">CSS Container Queries in Production</a></h2>
+        <div class="article-meta">6 min read · Frontend</div>
+        <a class="read-link" href="/articles/4">Read Article →</a>
+      </article>
+    </div>
+  </main>
+  <script>
+    fetch('/api/config').then(r => r.json()).then(({ mode, port }) => {
+      const b = document.getElementById('demo-banner');
+      if (mode === 'protected') {
+        Object.assign(b.style, { background: '#d1fae5', borderColor: '#059669', color: '#065f46' });
+        b.textContent = '✅ Demo — Protected Mode (port ' + port + ')';
+      } else {
+        Object.assign(b.style, { background: '#fee2e2', borderColor: '#dc2626', color: '#991b1b' });
+        b.textContent = '⚠️ Demo — Vulnerable Mode (port ' + port + ')';
+      }
+    });
+  </script>
+</body>
+</html>

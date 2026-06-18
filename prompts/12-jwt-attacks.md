@@ -4,12 +4,12 @@
 
 | Server type | Theme |
 |-------------|-------|
-| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Attacker server / Attack guide | Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` verbatim — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. The HTML lives in `public/guide.html`, served via `res.sendFile`. |
 | Internal / target server | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
 | Victim servers | Realistic product UI matching their brand |
 
 **Attacker/guide pages — non-negotiable rules:**
-- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` **verbatim**. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
 - Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block). These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
@@ -26,8 +26,13 @@ SQL Injection (3025–3027), Prototype Pollution (3028–3030),
 Event Loop Blocking (3031–3033).
 This demo lives under `demo-attacked/jwt-attacks/` using ports 3034–3036.
 
-Tech stack: Node.js + Express. All HTML as template literals. Vanilla CSS/JS.
+Tech stack: Node.js + Express. Vanilla CSS/JS.
 Uses `jsonwebtoken` and `cors` — both must be installed.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder.
+Servers use `res.sendFile(path.join(__dirname, 'public', 'index.html'))` for `GET /`.
+Victim and protected servers expose `GET /api/config → { mode, port }` for dynamic banner.
+No inline HTML template literals in server files.
 
 ---
 
@@ -38,6 +43,9 @@ demo-attacked/jwt-attacks/
 ├── victim-server.js           # AuthVault vulnerable    — port 3034
 ├── attack-guide-server.js     # JWT Attack Lab          — port 3035
 ├── victim-server-protected.js # AuthVault protected     — port 3036
+├── public/
+│   ├── index.html             # AuthVault UI (shared by victim + protected)
+│   └── guide.html             # JWT attack lab UI
 ├── package.json
 └── README.md
 ```
@@ -46,9 +54,9 @@ demo-attacked/jwt-attacks/
 ```json
 {
   "scripts": {
-    "victim":           "node victim-server.js",
-    "guide":            "node attack-guide-server.js",
-    "victim-protected": "node victim-server-protected.js"
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attack-guide-server.js",
+    "secure":      "node victim-server-protected.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -272,9 +280,8 @@ app.use(cors({ origin: 'http://localhost:3035' }));
 
 ### UI — MANDATORY: clone from reverse-tabnabbing dashboard
 
-Open `demo-attacked/reverse-tabnabbing/attacker-server.js`. Find the
-`DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim**. Do not
-reinterpret or recreate any CSS. Also copy `SWITCHER_CSS` verbatim.
+Open `demo-attacked/reverse-tabnabbing/public/guide.html`. Copy its entire `<style>` block
+**verbatim**. Do not reinterpret or recreate any CSS.
 
 Body: `padding: 2rem`. No wrapper div. No centering.
 Panels: `.flow-box` + `.credentials-panel` from that style block.

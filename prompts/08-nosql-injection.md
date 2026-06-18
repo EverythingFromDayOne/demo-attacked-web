@@ -4,12 +4,12 @@
 
 | Server type | Theme |
 |-------------|-------|
-| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Attacker server / Attack guide | Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` verbatim — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. The HTML lives in `public/guide.html`, served via `res.sendFile`. |
 | Internal / target server (e.g. SSRF port 3020) | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
 | Victim servers | Realistic product UI matching their brand |
 
 **Attacker/guide pages — non-negotiable rules:**
-- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` **verbatim**. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
 - Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block). These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
@@ -25,10 +25,15 @@ This demo lives under `demo-attacked/nosql-injection/` using ports 3022–3024.
 **Rewrite all existing files from scratch.** The previous version was built
 piecemeal and has inconsistent UI. This prompt is the single source of truth.
 
-Tech stack: Node.js + Express. All HTML as template literals. Vanilla CSS/JS.
+Tech stack: Node.js + Express. Vanilla CSS/JS.
 No real MongoDB — simulate MongoDB-style operator queries with a plain JS
 in-memory array and a custom `findOne()` that evaluates `$gt`, `$ne`,
 `$regex` operators. This makes the attack authentic without a running database.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder.
+Servers use `res.sendFile(path.join(__dirname, 'public', 'index.html'))` for `GET /`.
+Victim and protected servers expose `GET /api/config → { mode, port }` for dynamic banner.
+No inline HTML template literals in server files.
 
 ---
 
@@ -39,6 +44,9 @@ demo-attacked/nosql-injection/
 ├── victim-server.js           # DevAuth vulnerable     — port 3022
 ├── attack-guide-server.js     # NoSQL attack guide     — port 3023
 ├── victim-server-protected.js # DevAuth protected      — port 3024
+├── public/
+│   ├── index.html             # DevAuth login + dashboard (shared by victim + protected)
+│   └── guide.html             # NoSQL attack guide UI
 ├── package.json
 └── README.md
 ```
@@ -47,9 +55,9 @@ demo-attacked/nosql-injection/
 ```json
 {
   "scripts": {
-    "victim":           "node victim-server.js",
-    "guide":            "node attack-guide-server.js",
-    "victim-protected": "node victim-server-protected.js"
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attack-guide-server.js",
+    "secure":      "node victim-server-protected.js"
   },
   "dependencies": { "express": "^4.18.2" }
 }
@@ -329,10 +337,9 @@ All other routes (GET /logout, GET /dashboard) identical to port 3022.
 
 ### UI — MANDATORY: clone from reverse-tabnabbing dashboard
 
-Open `demo-attacked/reverse-tabnabbing/attacker-server.js`. Find the
-`DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim** — every
-rule, every value, character for character — into this page's `<style>`. Do not
-reinterpret or recreate any CSS. Also copy `SWITCHER_CSS` verbatim.
+Open `demo-attacked/reverse-tabnabbing/public/guide.html`. Copy its entire `<style>` block
+**verbatim** — every rule, every value, character for character — into this page's `<style>`.
+Do not reinterpret or recreate any CSS.
 
 Body layout: no wrapper div, no max-width centering. The body itself has
 `padding: 2rem` — same as the tabnabbing dashboard. Panels use `.flow-box` and

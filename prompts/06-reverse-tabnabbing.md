@@ -7,7 +7,16 @@ https://github.com/EverythingFromDayOne/demo-attacked-web.
 Previous demos: XSS (3001–3009), CSRF (3010–3012), Clickjacking (3013–3015).
 This demo lives under `demo-attacked/reverse-tabnabbing/` using ports 3016–3018.
 
-Tech stack: Node.js + Express only. All HTML as template literals. Vanilla CSS/JS.
+Tech stack: Node.js + Express only. Vanilla CSS/JS.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder.
+The victim server serves `res.sendFile(path.join(__dirname, 'public', 'index.html'))` and
+the protected server serves `res.sendFile(path.join(__dirname, 'public', 'index-protected.html'))`.
+The two files are DIFFERENT: `index.html` uses `rel="opener nofollow"` (vulnerable);
+`index-protected.html` uses `rel="noopener noreferrer"` (fixed). This difference must be
+visible in view-source so students can see exactly what changed.
+Guide server exposes `GET /api/config → { victimPort, protectedPort }` for dynamic links.
+No inline HTML template literals in server files.
 
 ---
 
@@ -18,6 +27,10 @@ demo-attacked/reverse-tabnabbing/
 ├── victim-server.js            # TechBlog vulnerable  — port 3016
 ├── victim-server-protected.js  # TechBlog protected   — port 3018
 ├── attacker-server.js          # Attacker pages       — port 3017
+├── public/
+│   ├── index.html              # TechBlog VULNERABLE — external link has rel="opener nofollow"
+│   ├── index-protected.html    # TechBlog PROTECTED  — external link has rel="noopener noreferrer"
+│   └── guide.html              # Attacker redirect page (main route)
 ├── package.json
 ├── .gitignore
 └── README.md
@@ -37,10 +50,14 @@ node_modules/
 
 ## Package.json scripts
 
-```
-victim            → node victim-server.js
-attacker          → node attacker-server.js
-victim-protected  → node victim-server-protected.js
+```json
+{
+  "scripts": {
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attacker-server.js",
+    "secure":      "node victim-server-protected.js"
+  }
+}
 ```
 
 Dependencies: `express`, `cors` only.
@@ -84,8 +101,16 @@ Clean editorial layout. White background, dark text, teal accent (`#0d9488`).
 Logo: "TechBlog 📰". Header has logo, nav (Home, Topics, Newsletter), and
 a user badge showing "👤 Alex Reader" (auto-authenticated).
 
-Orange demo banner at top:
-`⚠️ VULNERABLE: External links use rel="opener" — window.opener accessible from new tab`
+Orange demo banner at top (hardcoded — same across both victim and protected, the
+difference between versions is NOT the banner but the `rel` attribute on the external link):
+`⚠️ DEMO: See the external article link — view-source to compare rel attribute between versions`
+
+**GET /** (victim-server.js) — `res.sendFile(path.join(__dirname, 'public', 'index.html'))`
+**GET /** (victim-server-protected.js) — `res.sendFile(path.join(__dirname, 'public', 'index-protected.html'))`
+
+The critical difference students discover by viewing source:
+- `index.html`: `<a href="..." target="_blank" rel="opener nofollow">` ← vulnerable
+- `index-protected.html`: `<a href="..." target="_blank" rel="noopener noreferrer">` ← fixed
 
 ### Article list
 

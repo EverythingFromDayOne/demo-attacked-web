@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSRF Attack Lab — NetBank</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #0a0a0a;
+      color: #00ff41;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.5rem; text-shadow: 0 0 8px rgba(0,255,65,0.4); }
+    .subtitle { color: #4ade80; margin-bottom: 2rem; font-size: 0.9rem; }
+    .flow-box {
+      background: #111;
+      border: 1px solid #1a3a1a;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      line-height: 1.9;
+      font-size: 0.9rem;
+    }
+    .flow-box strong { color: #facc15; }
+    .btn-lure {
+      display: inline-block;
+      background: #dc2626;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .btn-lure:hover { background: #b91c1c; }
+    .note {
+      background: #1a1a1a;
+      border-left: 4px solid #facc15;
+      padding: 1rem 1.25rem;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #94a3b8;
+      max-width: 640px;
+    }
+    .note em { color: #facc15; font-style: normal; }
+    .target-switcher {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 9999;
+    }
+    .target-switcher button {
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid;
+    }
+    .target-switcher .btn-vulnerable {
+      background: #1e293b;
+      color: #fff;
+      border-color: #334155;
+    }
+    .target-switcher .btn-vulnerable.active {
+      background: #fff;
+      color: #1e293b;
+      border-color: #fff;
+    }
+    .target-switcher .btn-protected {
+      background: #16a34a;
+      color: #fff;
+      border-color: #16a34a;
+    }
+    .target-switcher .btn-protected.active {
+      background: #15803d;
+      color: #fff;
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>CSRF Attack Lab — NetBank</h1>
+  <p class="subtitle">Cross-Site Request Forgery — the browser sends the cookie, not JavaScript</p>
+
+  <div class="flow-box">
+    <strong>Attack flow:</strong><br>
+    1. Victim logs into NetBank at <strong>localhost:<span id="victim-port">3010</span></strong><br>
+    2. Victim visits the lure page (link below)<br>
+    3. Lure page silently submits a hidden form to <strong>localhost:<span id="victim-port-transfer">3010</span>/transfer</strong><br>
+    4. Browser auto-attaches <code>nb_session</code> cookie — NetBank processes the transfer<br>
+    5. Victim checks their balance — <strong>$9,000</strong> is gone
+  </div>
+
+  <a class="btn-lure" href="/lure">Open Lure Page →</a>
+
+  <div class="note">
+    <em>HttpOnly=true</em> on <code>nb_session</code> — yet the attack still works. CSRF does
+    not need JS to read the cookie. The browser sends it automatically on every request
+    to the matching domain, even when the request originates from a different origin.
+  </div>
+
+  <div class="target-switcher">
+    <button type="button" class="btn-vulnerable active" id="btn-vulnerable">Vulnerable (:3010)</button>
+    <button type="button" class="btn-protected" id="btn-protected">Protected (:3012)</button>
+  </div>
+
+  <script>
+    fetch('/api/config').then(r => r.json()).then(function (cfg) {
+      var victimPort = cfg.victimPort;
+      var protectedPort = cfg.protectedPort;
+
+      document.getElementById('victim-port').textContent = victimPort;
+      document.getElementById('victim-port-transfer').textContent = victimPort;
+      document.getElementById('btn-vulnerable').textContent = 'Vulnerable (:' + victimPort + ')';
+      document.getElementById('btn-protected').textContent = 'Protected (:' + protectedPort + ')';
+
+      document.getElementById('btn-vulnerable').addEventListener('click', function () {
+        window.open('http://localhost:' + victimPort, '_blank');
+        document.getElementById('btn-vulnerable').classList.add('active');
+        document.getElementById('btn-protected').classList.remove('active');
+      });
+
+      document.getElementById('btn-protected').addEventListener('click', function () {
+        window.open('http://localhost:' + protectedPort, '_blank');
+        document.getElementById('btn-protected').classList.add('active');
+        document.getElementById('btn-vulnerable').classList.remove('active');
+      });
+    });
+  </script>
+</body>
+</html>

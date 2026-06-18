@@ -20,7 +20,7 @@ const PORT = 3005;
 const VICTIM_PORT = 3004;
 
 app.use(cors());
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const stolenCookies = [];
 
@@ -78,7 +78,7 @@ app.get('/api/payloads', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'attacker.html'));
+  res.sendFile(path.join(__dirname, 'public', 'guide.html'));
 });
 
 app.listen(PORT, () => {

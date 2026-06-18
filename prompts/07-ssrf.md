@@ -6,9 +6,16 @@ Part of the security attack demonstration lab at
 https://github.com/EverythingFromDayOne/demo-attacked-web.
 Previous demos: XSS (3001–3009), CSRF (3010–3012), Clickjacking (3013–3015),
 Reverse Tabnabbing (3016–3018).
-This demo lives under `demo-attacked/ssrf/` using ports 3019–3021.
+This demo lives under `demo-attacked/ssrf/` using ports 3018–3021.
+Note: port 3018 is shared with the reverse-tabnabbing protected server — do not run both demos simultaneously.
 
-Tech stack: Node.js + Express. All HTML as template literals. Vanilla CSS/JS.
+Tech stack: Node.js + Express. Vanilla CSS/JS.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder. Victim and
+protected servers use `res.sendFile(path.join(__dirname, 'public', 'index.html'))` for `GET /`
+and expose `GET /api/config → { mode, port }` for dynamic banner rendering.
+`internal-server.js` serves `res.sendFile(path.join(__dirname, 'public', 'internal.html'))`.
+No inline HTML template literals in server files.
 
 ---
 
@@ -18,7 +25,12 @@ Tech stack: Node.js + Express. All HTML as template literals. Vanilla CSS/JS.
 demo-attacked/ssrf/
 ├── victim-server.js            # DevShare vulnerable     — port 3019
 ├── victim-server-protected.js  # DevShare protected      — port 3021
-├── internal-server.js          # Internal API + console  — port 3020
+├── internal-server.js          # Internal API + UI       — port 3020
+├── attack-guide-server.js      # Attack guide            — port 3018
+├── public/
+│   ├── index.html              # DevShare UI (shared by victim + protected)
+│   ├── internal.html           # Internal server UI (no banner — it's the target, not a demo server)
+│   └── guide.html              # Attack guide UI
 ├── package.json
 ├── .gitignore
 └── README.md
@@ -38,10 +50,15 @@ node_modules/
 
 ## Package.json scripts
 
-```
-victim            → node victim-server.js
-internal          → node internal-server.js
-victim-protected  → node victim-server-protected.js
+```json
+{
+  "scripts": {
+    "vulnerable":  "node victim-server.js",
+    "internal":    "node internal-server.js",
+    "guide":       "node attack-guide-server.js",
+    "secure":      "node victim-server-protected.js"
+  }
+}
 ```
 
 Dependencies: `express`, `cors`, `node-fetch` (or use native `fetch` — Node 18+).
@@ -77,8 +94,12 @@ blue-purple accent (`#6366f1`). Logo: "DevShare </> — Developer Link Hub".
 
 Header: logo, nav (Feed, Bookmarks, Collections, Trending), user avatar "D".
 
-Orange demo banner at top:
-`⚠️ VULNERABLE: URL preview fetches any URL server-side — no private address validation`
+Demo banner at top — color and text determined by `/api/config` on `DOMContentLoaded`:
+- Vulnerable: orange `⚠️ VULNERABLE: URL preview fetches any URL server-side — no private address validation`
+- Protected: green `✅ PROTECTED: Private IP ranges blocked — SSRF prevented`
+
+**GET /api/config** — returns `{ mode: 'vulnerable', port: 3019 }` (victim) or `{ mode: 'protected', port: 3021 }` (protected).
+**GET /** — `res.sendFile(path.join(__dirname, 'public', 'index.html'))`
 
 ### Main page layout
 
@@ -418,6 +439,7 @@ Real-world target: http://169.254.169.254/ → AWS IAM credentials
 
 | Port | Role | File |
 |------|------|------|
+| 3018 | Attack guide | `attack-guide-server.js` |
 | 3019 | Vulnerable victim (DevShare) | `victim-server.js` |
 | 3020 | Internal API (the target, not the attacker) | `internal-server.js` |
 | 3021 | Protected victim (DevShare) | `victim-server-protected.js` |
@@ -426,9 +448,10 @@ Real-world target: http://169.254.169.254/ → AWS IAM credentials
 
 1. `cd demo-attacked/ssrf && npm install`
 2. Terminal 1: `npm run vulnerable` → DevShare at **localhost:3019**
-3. Terminal 2: `npm run guide` → Internal API at **localhost:3020**
-4. Open **localhost:3020** — note this is an internal server, not an attack tool.
-5. Copy `http://localhost:3020/internal/env`.
+3. Terminal 2: `npm run internal` → Internal API at **localhost:3020**
+4. Terminal 3: `npm run guide` → Attack guide at **localhost:3018**
+5. Open **localhost:3020** — note this is the internal SSRF target, not an attack tool.
+6. Copy `http://localhost:3020/internal/env`.
 6. Open **localhost:3019**, paste the URL into the preview form, click "Generate Preview".
 7. The DevShare server fetches the internal API and returns your fake database
    password, JWT secret, and AWS keys in the preview card.

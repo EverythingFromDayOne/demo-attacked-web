@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSRF Attack Console — DevShare</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', Consolas, 'Liberation Mono', monospace;
+      background: #0a0a0a;
+      color: #00ff41;
+      min-height: 100vh;
+      padding: 2rem 1.5rem 5rem;
+      line-height: 1.6;
+      font-size: 0.875rem;
+    }
+    h1 {
+      font-size: 1.25rem;
+      margin-bottom: 0.35rem;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.35);
+    }
+    .subtitle {
+      color: #4ade80;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+    }
+    .flow-box {
+      background: #111;
+      border: 1px solid #1a3a1a;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      line-height: 1.85;
+      font-size: 0.85rem;
+      max-width: 760px;
+    }
+    .flow-box strong { color: #facc15; }
+    .flow-box code {
+      color: #cbd5e1;
+      font-size: 0.8rem;
+    }
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+    .endpoint-list {
+      max-width: 760px;
+      margin-bottom: 2rem;
+    }
+    .endpoint-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: #111;
+      border: 1px solid #1a3a1a;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .endpoint-row code {
+      flex: 1;
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      word-break: break-all;
+    }
+    .endpoint-row span {
+      color: #64748b;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+    .btn-copy {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.72rem;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #94a3b8;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .btn-copy:hover {
+      border-color: #00ff41;
+      color: #00ff41;
+    }
+    details {
+      max-width: 760px;
+      margin-bottom: 2rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    details summary {
+      cursor: pointer;
+      color: #64748b;
+      user-select: none;
+      list-style: none;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details[open] summary { margin-bottom: 0.75rem; }
+    .demo-body {
+      color: #94a3b8;
+      line-height: 1.65;
+      font-size: 0.78rem;
+    }
+    .demo-body p { margin-bottom: 0.75rem; }
+    .demo-body ol {
+      margin: 0.75rem 0 0 1.25rem;
+    }
+    .demo-body li { margin-bottom: 0.35rem; }
+    .demo-body code {
+      color: #cbd5e1;
+      font-size: 0.76rem;
+    }
+    .target-switcher {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 9999;
+    }
+    .target-switcher button {
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid;
+      font-family: inherit;
+    }
+    .target-switcher .btn-vulnerable {
+      background: #1e293b;
+      color: #fff;
+      border-color: #334155;
+    }
+    .target-switcher .btn-vulnerable.active {
+      background: #fff;
+      color: #1e293b;
+      border-color: #fff;
+    }
+    .target-switcher .btn-protected {
+      background: #16a34a;
+      color: #fff;
+      border-color: #16a34a;
+    }
+    .target-switcher .btn-protected.active {
+      background: #15803d;
+      color: #fff;
+      border-color: #15803d;
+    }
+  </style>
+</head>
+<body>
+  <h1>SSRF Attack Console</h1>
+  <p class="subtitle">DevShare link preview — server-side request forgery lab</p>
+
+  <div class="flow-box">
+    <strong>Attack flow:</strong><br>
+    1. Copy an internal URL below (target API on port <span id="internal-port">3020</span>)<br>
+    2. Open vulnerable DevShare at <strong>localhost:<span id="victim-port">3019</span></strong><br>
+    3. Paste the URL into the preview form and click <strong>Generate Preview →</strong><br>
+    4. DevShare's server fetches the internal API and returns secrets in the preview card
+  </div>
+
+  <div class="section-title">Internal URLs — copy and paste into DevShare preview</div>
+  <div class="endpoint-list" id="endpoint-list"></div>
+
+  <details>
+    <summary>▶ Demo context — why this page is reachable</summary>
+    <div class="demo-body">
+      <p>
+        In production, port <span class="internal-port-inline">3020</span> would be on a private subnet unreachable from
+        your browser. This demo runs everything on localhost so you can see the
+        internal API directly — but that's not how SSRF works in the real attack.
+      </p>
+      <p>In the real attack:</p>
+      <p>
+        Your browser cannot reach <code id="example-env-url">http://localhost:3020/internal/env</code><br>
+        DevShare's server (port <span class="victim-port-inline">3019</span>) CAN reach it — same machine, same network<br>
+        You trick DevShare into fetching it for you via the URL preview feature<br>
+        DevShare returns the response to your browser
+      </p>
+      <p>That's Server-Side Request Forgery: you forged a request the server made.</p>
+      <p>To run the attack:</p>
+      <ol>
+        <li>Open <code id="step-victim-url">http://localhost:3019</code> (vulnerable DevShare)</li>
+        <li>Paste any <code>/internal/*</code> URL into the preview field</li>
+        <li>Click Generate Preview</li>
+        <li>Read the secrets in the preview card</li>
+      </ol>
+    </div>
+  </details>
+
+  <div class="target-switcher">
+    <button type="button" class="btn-vulnerable active" id="btn-vulnerable">Vulnerable (:3019)</button>
+    <button type="button" class="btn-protected" id="btn-protected">Protected (:3021)</button>
+  </div>
+
+  <script>
+    var ENDPOINTS = [
+      { path: '/internal', description: 'Service discovery' },
+      { path: '/internal/env', description: 'Runtime environment & secrets' },
+      { path: '/internal/users', description: 'User database snapshot' },
+      { path: '/internal/config', description: 'Infrastructure configuration' },
+      { path: '/internal/health', description: 'DB / Redis connection strings' },
+    ];
+
+    function renderEndpoints(internalPort) {
+      var list = document.getElementById('endpoint-list');
+      list.innerHTML = ENDPOINTS.map(function (ep) {
+        var url = 'http://localhost:' + internalPort + ep.path;
+        return (
+          '<div class="endpoint-row">' +
+            '<code>' + url + '</code>' +
+            '<span>' + ep.description + '</span>' +
+            '<button type="button" class="btn-copy" data-url="' + url + '">Copy</button>' +
+          '</div>'
+        );
+      }).join('');
+
+      list.querySelectorAll('.btn-copy').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          navigator.clipboard.writeText(btn.getAttribute('data-url'));
+          btn.textContent = 'Copied!';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+        });
+      });
+    }
+
+    fetch('/api/config').then(function (r) { return r.json(); }).then(function (cfg) {
+      var victimPort = cfg.victimPort;
+      var protectedPort = cfg.protectedPort;
+      var internalPort = cfg.internalPort;
+
+      document.getElementById('internal-port').textContent = internalPort;
+      document.getElementById('victim-port').textContent = victimPort;
+      document.querySelectorAll('.internal-port-inline').forEach(function (el) {
+        el.textContent = internalPort;
+      });
+      document.querySelectorAll('.victim-port-inline').forEach(function (el) {
+        el.textContent = victimPort;
+      });
+      document.getElementById('example-env-url').textContent =
+        'http://localhost:' + internalPort + '/internal/env';
+      document.getElementById('step-victim-url').textContent =
+        'http://localhost:' + victimPort;
+
+      document.getElementById('btn-vulnerable').textContent = 'Vulnerable (:' + victimPort + ')';
+      document.getElementById('btn-protected').textContent = 'Protected (:' + protectedPort + ')';
+
+      renderEndpoints(internalPort);
+
+      document.getElementById('btn-vulnerable').addEventListener('click', function () {
+        window.open('http://localhost:' + victimPort, '_blank');
+        document.getElementById('btn-vulnerable').classList.add('active');
+        document.getElementById('btn-protected').classList.remove('active');
+      });
+
+      document.getElementById('btn-protected').addEventListener('click', function () {
+        window.open('http://localhost:' + protectedPort, '_blank');
+        document.getElementById('btn-protected').classList.add('active');
+        document.getElementById('btn-vulnerable').classList.remove('active');
+      });
+    });
+  </script>
+</body>
+</html>

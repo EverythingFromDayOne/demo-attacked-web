@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConfigHub — Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #334155;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    a { color: #0ea5e9; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .demo-banner {
+      padding: 0.65rem 1.5rem;
+      font-size: 0.82rem;
+      text-align: center;
+      font-weight: 500;
+      border-bottom: 2px solid;
+    }
+    .topnav {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wordmark {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #0f172a;
+    }
+    .wordmark span { color: #0ea5e9; }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: #64748b;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: #0ea5e9; }
+    .nav-links a.active { color: #0ea5e9; }
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.75rem 1.5rem 3rem;
+    }
+    .admin-locked {
+      max-width: 480px;
+      margin: 4rem auto;
+      text-align: center;
+      padding: 2.5rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+    }
+    .admin-locked .lock-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .admin-locked p { color: #64748b; font-size: 0.95rem; }
+    .admin-alert {
+      background: #450a0a;
+      border: 2px solid #dc2626;
+      color: #fca5a5;
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .admin-table th,
+    .admin-table td {
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #e2e8f0;
+    }
+    .admin-table th { background: #f8fafc; color: #475569; }
+    .admin-table code {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.78rem;
+      word-break: break-all;
+    }
+    .callout {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: 0.85rem;
+      color: #9a3412;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="demo-banner" class="demo-banner"></div>
+  <nav class="topnav">
+    <div class="wordmark"><span>Config</span>Hub</div>
+    <div class="nav-links">
+      <a href="/#presets">Presets</a>
+      <span style="color:#cbd5e1">·</span>
+      <a href="/#merge">Merge</a>
+      <span style="color:#cbd5e1">·</span>
+      <a href="/admin" class="active">Admin</a>
+    </div>
+  </nav>
+  <div class="shell" id="admin-content"></div>
+  <script>
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    fetch('/api/admin-status')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var el = document.getElementById('admin-content');
+        if (!data.granted) {
+          el.innerHTML =
+            '<div class="admin-locked">' +
+              '<div class="lock-icon">🔒</div>' +
+              '<p>Admin access denied. You do not have the required privileges.</p>' +
+            '</div>';
+          return;
+        }
+
+        var presetRows = (data.presets || []).map(function (p) {
+          return (
+            '<tr>' +
+              '<td>' + escapeHtml(String(p.id)) + '</td>' +
+              '<td>' + escapeHtml(p.name) + '</td>' +
+              '<td><code>' + escapeHtml(JSON.stringify(p.config)) + '</code></td>' +
+            '</tr>'
+          );
+        }).join('');
+
+        el.innerHTML =
+          '<div class="admin-alert">🚨 ADMIN ACCESS GRANTED via prototype pollution</div>' +
+          '<table class="admin-table">' +
+            '<thead><tr><th>ID</th><th>Name</th><th>Config</th></tr></thead>' +
+            '<tbody>' + presetRows + '</tbody>' +
+          '</table>' +
+          '<table class="admin-table">' +
+            '<thead><tr><th>Property</th><th>Value</th></tr></thead>' +
+            '<tbody>' +
+              '<tr><td>Object.prototype.isAdmin</td><td>true</td></tr>' +
+              '<tr><td>Object.prototype.role</td><td>superadmin</td></tr>' +
+            '</tbody>' +
+          '</table>' +
+          '<div class="callout">' +
+            'Every {} in this Node.js process now inherits these properties. ' +
+            'Restart the server to clear the pollution.' +
+          '</div>';
+      });
+  </script>
+  <script>
+    fetch('/api/config').then(r => r.json()).then(({ mode, port }) => {
+      const b = document.getElementById('demo-banner');
+      if (mode === 'protected') {
+        Object.assign(b.style, { background: '#d1fae5', borderColor: '#059669', color: '#065f46' });
+        b.textContent = '✅ Demo — Protected Mode (port ' + port + ')';
+      } else {
+        Object.assign(b.style, { background: '#fee2e2', borderColor: '#dc2626', color: '#991b1b' });
+        b.textContent = '⚠️ Demo — Vulnerable Mode (port ' + port + ')';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — PayrollHub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .demo-banner {
+      border-bottom: 2px solid;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.82rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    .layout { display: flex; min-height: calc(100vh - 40px); }
+    .sidebar {
+      width: 220px;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1.25rem 0.75rem;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-brand {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      padding: 0 0.85rem 1.25rem;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 1rem;
+    }
+    .sidebar-brand span { color: #818cf8; }
+    .sidebar a {
+      display: block;
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 0.55rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      margin-bottom: 0.2rem;
+    }
+    .sidebar a:hover, .sidebar a.active { background: #334155; color: #fff; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 1.25rem;
+      border-top: 1px solid #334155;
+    }
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+      padding: 0 0.25rem;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #6366f1;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .user-name { font-size: 0.82rem; color: #cbd5e1; word-break: break-all; }
+    .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 1.75rem;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .security-badge {
+      margin-left: auto;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .breadcrumb { font-size: 0.9rem; color: #64748b; }
+    .breadcrumb strong { color: #0f172a; font-weight: 600; }
+    .content { padding: 1.75rem 2rem 3rem; flex: 1; }
+    .payslip-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+    .card-header h3 { font-size: 1rem; color: #0f172a; }
+    .card-id { font-size: 0.78rem; color: #94a3b8; font-family: 'Courier New', monospace; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 2rem;
+      font-size: 0.88rem;
+      color: #475569;
+      margin-bottom: 1rem;
+    }
+    .card-grid span { color: #0f172a; font-weight: 600; }
+    .btn-view {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-view:hover { background: #4f46e5; }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      max-width: 640px;
+    }
+    .detail-item {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+    .detail-item label { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-item .value { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    .detail-item .value.salary { color: #6366f1; }
+    .error-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .error-box.visible { display: block; }
+    .error-box .hint { margin-top: 0.5rem; font-size: 0.82rem; color: #991b1b; }
+    .profile-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+      max-width: 480px;
+    }
+    .profile-card h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .profile-row { display: flex; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row span:first-child { color: #64748b; }
+    .empty-state { color: #64748b; font-size: 0.9rem; padding: 2rem 0; }
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      padding: 1.5rem;
+    }
+    .login-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.06);
+    }
+    .login-card h1 { font-size: 1.5rem; margin-bottom: 0.35rem; }
+    .login-card h1 span { color: #6366f1; }
+    .login-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    label.field-label { display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 0.4rem; }
+    .login-input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: #0f172a;
+      background: #fff;
+      outline: none;
+      box-sizing: border-box;
+      font-family: inherit;
+      margin-bottom: 1rem;
+    }
+    .login-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .login-error { color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+    .login-error.visible { display: block; }
+    .btn-signin {
+      width: 100%;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn-signin:hover { background: #4f46e5; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="demo-banner" class="demo-banner"></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span>Payroll</span>Hub</div>
+      <nav>
+        <a href="/">My Payslips</a>
+        <a href="/profile" class="active">Profile</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div class="user-name" id="sidebar-name">—</div>
+        </div>
+        <button id="btn-logout" style="margin-top:auto;width:100%;padding:0.5rem;background:transparent;border:1px solid #475569;color:#94a3b8;border-radius:4px;cursor:pointer;font-size:0.8rem">Sign Out</button>
+      </div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="breadcrumb"><strong>Profile</strong></div>
+        <span class="security-badge" id="security-badge" style="display:none">🛡 IDOR Protected</span>
+      </header>
+      <main class="content">
+        <div class="profile-card" id="profile-card">
+          <h2>Employee Profile</h2>
+          <div class="profile-row"><span>Full Name</span><span id="pf-name">—</span></div>
+          <div class="profile-row"><span>Username</span><span id="pf-user">—</span></div>
+          <div class="profile-row"><span>User ID</span><span id="pf-id">—</span></div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    var authToken = localStorage.getItem('authToken');
+
+    function authHeaders() {
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
+    }
+
+    function redirectLogin() {
+      window.location.href = '/login';
+    }
+
+    function initUserCard(user) {
+      var avatar = document.getElementById('user-avatar');
+      var nameEl = document.getElementById('sidebar-name');
+      if (avatar) avatar.textContent = (user.fullName || user.username || '?').charAt(0).toUpperCase();
+      if (nameEl) nameEl.textContent = user.fullName || user.username;
+    }
+
+    document.getElementById('btn-logout').addEventListener('click', async function() {
+      var token = localStorage.getItem('authToken');
+      if (token) {
+        try { await fetch('/api/logout', { method:'POST', headers:{'Authorization':'Bearer '+token} }); }
+        catch(e) {}
+      }
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    });
+
+    function ensureAuth() {
+      if (!authToken) { redirectLogin(); return Promise.reject(); }
+      return fetch('/api/me', { headers: { Authorization: 'Bearer ' + authToken } })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function(user) { initUserCard(user); return user; })
+        .catch(function() {
+          localStorage.removeItem('authToken');
+          redirectLogin();
+          return Promise.reject();
+        });
+    }
+
+    ensureAuth().then(function(user) {
+      document.getElementById('pf-name').textContent = user.fullName || '—';
+      document.getElementById('pf-user').textContent = user.username;
+      document.getElementById('pf-id').textContent = user.id;
+    }).catch(function() {});
+  </script>
+  <script>
+    fetch('/api/config').then(r => r.json()).then(({ mode, port }) => {
+      const b = document.getElementById('demo-banner');
+      if (mode === 'protected') {
+        Object.assign(b.style, { background: '#d1fae5', borderColor: '#059669', color: '#065f46' });
+        b.textContent = '✅ Demo — Protected Mode (port ' + port + ')';
+        var sb = document.getElementById('security-badge');
+        if (sb) sb.style.display = '';
+      } else {
+        Object.assign(b.style, { background: '#fee2e2', borderColor: '#dc2626', color: '#991b1b' });
+        b.textContent = '⚠️ Demo — Vulnerable Mode (port ' + port + ')';
+      }
+    });
+  </script>
+</body>
+</html>

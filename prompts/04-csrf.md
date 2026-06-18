@@ -6,9 +6,14 @@ Part of the security attack demonstration lab under `demo-attacked/`.
 XSS demos already exist under `demo-attacked/xss/` (ports 3001–3009).
 This CSRF demo lives under `demo-attacked/csrf/` (ports 3010–3012).
 
-Tech stack: Node.js + Express only. No frontend framework. All HTML served as
-template literals from the server, same pattern as the XSS demos. Vanilla
-CSS and vanilla JS only.
+Tech stack: Node.js + Express only. No frontend framework. Vanilla CSS and vanilla JS only.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder per server.
+Servers use `res.sendFile(path.join(__dirname, 'public', 'index.html'))` for the main route.
+Every victim and protected server exposes `GET /api/config → { mode, port }` so the client
+can render the correct banner color without SSR. Guide servers expose
+`GET /api/config → { victimPort, protectedPort }` for dynamic form targets.
+No inline HTML template literals in server files.
 
 ---
 
@@ -19,21 +24,26 @@ demo-attacked/csrf/
 ├── victim-server.js            # NetBank vulnerable — port 3010
 ├── victim-server-protected.js  # NetBank protected  — port 3012
 ├── attacker-server.js          # Attacker lure + dashboard — port 3011
+├── public/
+│   ├── index.html              # NetBank SPA (shared by victim + protected)
+│   ├── guide.html              # Attacker dashboard (main page)
+│   └── lure.html               # Malicious lure page
 ├── package.json
 └── README.md
 ```
-
-No separate HTML files — all HTML is inlined in the server as template
-literals, exactly like the XSS demos.
 
 ---
 
 ## Package.json scripts
 
-```
-victim            → node victim-server.js
-attacker          → node attacker-server.js
-victim-protected  → node victim-server-protected.js
+```json
+{
+  "scripts": {
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attacker-server.js",
+    "secure":      "node victim-server-protected.js"
+  }
+}
 ```
 
 Dependencies: `express`, `cors`, `cookie-parser`.
@@ -49,8 +59,10 @@ panels, green accent (`#16a34a`) for positive balances, red (`#dc2626`) for
 debits. Logo: "NetBank 🏦". Two-page SPA driven by vanilla JS (login page →
 dashboard page, no route change — just show/hide divs).
 
-A red demo banner at the very top reads:
-`⚠️ VULNERABLE: No CSRF token — any cross-origin form can trigger a transfer`
+A demo banner at the very top reads one of two things, determined by the
+`/api/config` response fetched on `DOMContentLoaded`:
+- Vulnerable mode: red banner `⚠️ VULNERABLE: No CSRF token — any cross-origin form can trigger a transfer`
+- Protected mode: green banner `✅ PROTECTED: CSRF token required on all transfer requests`
 
 ### Login page
 
@@ -134,7 +146,9 @@ New transfers (from CSRF attack or manual use) prepend to this list at runtime.
 **GET /api/logout**
 - Clears the cookie, returns `{ success: true }`
 
-**GET /** — serves the entire SPA HTML (login + dashboard in one page, toggled by JS)
+**GET /api/config** — returns `{ mode: 'vulnerable', port: 3010 }` (victim) or `{ mode: 'protected', port: 3012 }` (protected)
+
+**GET /** — `res.sendFile(path.join(__dirname, 'public', 'index.html'))` — SPA (login + dashboard toggled by JS)
 
 ---
 
@@ -142,8 +156,14 @@ New transfers (from CSRF attack or manual use) prepend to this list at runtime.
 
 Two pages served:
 
+### GET /api/config — attacker config
+
+Returns `{ victimPort: 3010, protectedPort: 3012 }`. The guide page JS uses this to
+dynamically set the lure form action and the victim-switcher button URLs.
+
 ### GET / — Attacker dashboard
 
+Serves `res.sendFile(path.join(__dirname, 'public', 'guide.html'))`.
 Dark hacker aesthetic (dark background, green terminal-style font). Shows:
 
 - Title: "CSRF Attack Lab — NetBank"
@@ -175,6 +195,7 @@ Clicking either button opens the corresponding NetBank instance in a new tab.
 
 ### GET /lure — The malicious page
 
+Serves `res.sendFile(path.join(__dirname, 'public', 'lure.html'))`.
 Disguised as a "ShopNest Rewards" notification:
 - Branding: "ShopNest 🛒"
 - Headline: "You have a $500 store voucher waiting!"
@@ -231,8 +252,8 @@ This fires automatically when the page loads — no form submit needed.
 
 ## Protected Server (victim-server-protected.js — port 3012)
 
-Same NetBank UI but with a green demo banner:
-`✅ PROTECTED: CSRF token required on all transfer requests`
+Same `public/index.html` as the victim — banner color/text is determined dynamically by
+`/api/config → { mode: 'protected', port: 3012 }` fetched on `DOMContentLoaded`.
 
 ### Two defenses, both applied
 

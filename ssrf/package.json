@@ -5,7 +5,8 @@
   "main": "victim-server.js",
   "scripts": {
     "vulnerable": "node victim-server.js",
-    "guide": "node internal-server.js",
+    "internal": "node internal-server.js",
+    "guide": "node attack-guide-server.js",
     "secure": "node victim-server-protected.js"
   },
   "dependencies": {

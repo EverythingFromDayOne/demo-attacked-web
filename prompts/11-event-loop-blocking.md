@@ -4,12 +4,12 @@
 
 | Server type | Theme |
 |-------------|-------|
-| Attacker server / Attack console | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Attacker server / Attack console | Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` verbatim — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. The HTML lives in `public/guide.html`, served via `res.sendFile`. |
 | Internal / target server | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
 | Victim servers | Realistic product UI matching their brand |
 
 **Attacker/guide pages — non-negotiable rules:**
-- Copy the `<style>` block from `DASHBOARD_HTML` in `reverse-tabnabbing/attacker-server.js` **verbatim**. Never recreate or paraphrase it.
+- Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` **verbatim**. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No max-width wrapper div. No centering.
 - Panels: use `.flow-box` and `.credentials-panel` classes (defined in that style block). These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: **fixed bottom-left `target-switcher` only.** No other open/link buttons anywhere on the page.
@@ -25,8 +25,13 @@ Reverse Tabnabbing (3016–3018), SSRF (3019–3021), NoSQL Injection (3022–30
 SQL Injection (3025–3027), Prototype Pollution (3028–3030).
 This demo lives under `demo-attacked/event-loop-blocking/` using ports 3031–3033.
 
-Tech stack: Node.js + Express. All HTML as template literals. Vanilla CSS/JS.
+Tech stack: Node.js + Express. Vanilla CSS/JS.
 `worker_threads` is built into Node.js — no extra npm packages beyond express.
+
+**Serving architecture:** All HTML lives in static files under a `public/` subfolder.
+Servers use `res.sendFile(path.join(__dirname, 'public', 'index.html'))` for `GET /`.
+Victim and protected servers expose `GET /api/config → { mode, port }` for dynamic banner.
+No inline HTML template literals in server files.
 
 ---
 
@@ -38,6 +43,9 @@ demo-attacked/event-loop-blocking/
 ├── attack-console-server.js   # Attack console          — port 3032
 ├── victim-server-protected.js # DevUtils protected      — port 3033
 ├── worker.js                  # Worker thread (used by port 3033 only)
+├── public/
+│   ├── index.html             # DevUtils UI (shared by victim + protected)
+│   └── guide.html             # Attack console UI
 ├── package.json
 └── README.md
 ```
@@ -46,9 +54,9 @@ demo-attacked/event-loop-blocking/
 ```json
 {
   "scripts": {
-    "victim":           "node victim-server.js",
-    "console":          "node attack-console-server.js",
-    "victim-protected": "node victim-server-protected.js"
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attack-console-server.js",
+    "secure":      "node victim-server-protected.js"
   },
   "dependencies": {
     "express": "^4.18.2"
@@ -184,10 +192,9 @@ No timeout, no complexity limit.
 
 ### UI — MANDATORY: clone from reverse-tabnabbing dashboard
 
-Open `demo-attacked/reverse-tabnabbing/attacker-server.js`. Find the
-`DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim** — every
-rule, every value, character for character — into this page's `<style>`. Do not
-reinterpret or recreate any CSS. Also copy `SWITCHER_CSS` verbatim.
+Open `demo-attacked/reverse-tabnabbing/public/guide.html`. Copy its entire `<style>` block
+**verbatim** — every rule, every value, character for character — into this page's `<style>`.
+Do not reinterpret or recreate any CSS.
 
 Body layout: no wrapper div, no max-width centering. Body has `padding: 2rem`.
 Panels use `.flow-box` and `.credentials-panel` classes from that style block.

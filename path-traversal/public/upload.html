@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload — FileVault</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .demo-banner {
+      border-bottom: 2px solid;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.82rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    .layout { display: flex; min-height: calc(100vh - 40px); }
+    .sidebar {
+      width: 220px;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1.25rem 0.75rem;
+      flex-shrink: 0;
+    }
+    .sidebar-brand {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #fff;
+      padding: 0 0.85rem 1.25rem;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 1rem;
+    }
+    .sidebar-brand span { color: #818cf8; }
+    .sidebar a {
+      display: block;
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 0.55rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      margin-bottom: 0.2rem;
+    }
+    .sidebar a:hover, .sidebar a.active { background: #334155; color: #fff; }
+    .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 1.75rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .logo { font-weight: 700; font-size: 1.1rem; color: #0f172a; }
+    .logo span { color: #6366f1; }
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .user-badge {
+      background: #eef2ff;
+      color: #4338ca;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .security-badge {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-logout:hover { background: #f1f5f9; }
+    .content { padding: 1.75rem 2rem 3rem; flex: 1; }
+    .content h2 { font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .content .subtitle { color: #64748b; font-size: 0.88rem; margin-bottom: 1.5rem; }
+    .upload-card {
+      background: #fff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 480px;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner" id="demo-banner"></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span>File</span>Vault</div>
+      <nav>
+        <a href="/">My Files</a>
+        <a href="/upload" class="active">Upload</a>
+      </nav>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <div class="logo"><span>File</span>Vault</div>
+        <div class="topbar-right">
+          <span class="security-badge" id="security-badge" style="display:none">🛡 Path Traversal Protected</span>
+          <div class="user-badge" id="user-badge">—</div>
+          <button type="button" class="btn-logout" id="btn-logout">Sign Out</button>
+        </div>
+      </header>
+      <main class="content">
+        <h2>Upload</h2>
+        <p class="subtitle">Add new documents to your vault</p>
+        <div class="upload-card">
+          Upload is disabled in this security demo.<br>
+          Use the attack guide at localhost:3044 to test path traversal payloads.
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    var authToken = localStorage.getItem('authToken');
+
+    function bootUser(user) {
+      var badge = document.getElementById('user-badge');
+      if (badge) badge.textContent = user.username;
+    }
+
+    document.getElementById('btn-logout').addEventListener('click', async function() {
+      var token = localStorage.getItem('authToken');
+      if (token) {
+        try { await fetch('/api/logout', { method:'POST', headers:{'Authorization':'Bearer '+token} }); }
+        catch(e) {}
+      }
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    });
+
+    function ensureAuth() {
+      if (!authToken) { window.location.href = '/login'; return Promise.reject(); }
+      return fetch('/api/me', { headers: { Authorization: 'Bearer ' + authToken } })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function(user) { bootUser(user); return user; })
+        .catch(function() {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          return Promise.reject();
+        });
+    }
+
+    fetch('/api/config').then(function(r) { return r.json(); }).then(function(cfg) {
+      var b = document.getElementById('demo-banner');
+      if (cfg.mode === 'protected') {
+        Object.assign(b.style, { background: '#d1fae5', borderColor: '#059669', color: '#065f46' });
+        b.textContent = '✅ Demo — Protected Mode (port ' + cfg.port + ')';
+        document.getElementById('security-badge').style.display = '';
+      } else {
+        Object.assign(b.style, { background: '#fee2e2', borderColor: '#dc2626', color: '#991b1b' });
+        b.textContent = '⚠️ Demo — Vulnerable Mode (port ' + cfg.port + ')';
+      }
+      ensureAuth().catch(function() {});
+    });
+  </script>
+</body>
+</html>

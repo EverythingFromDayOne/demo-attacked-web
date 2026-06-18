@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Profile — ProfileHub</title>
+  <style>    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .demo-banner {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.82rem;
+      text-align: center;
+      font-weight: 500;
+      border-bottom: 2px solid;
+    }
+    .layout { display: flex; min-height: calc(100vh - 40px); }
+    .sidebar {
+      width: 240px;
+      background: #f8fafc;
+      border-right: 1px solid #e2e8f0;
+      padding: 1.5rem 1rem;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-user {
+      text-align: center;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 1rem;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #6366f1;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 auto 0.75rem;
+    }
+    .sidebar-username { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem; }
+    .plan-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .plan-badge.free { background: #e2e8f0; color: #475569; }
+    .plan-badge.pro { background: #d1fae5; color: #065f46; }
+    .plan-badge.admin { background: #fef3c7; color: #92400e; }
+    .sidebar nav a {
+      display: block;
+      color: #64748b;
+      text-decoration: none;
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-bottom: 0.25rem;
+    }
+    .sidebar nav a:hover, .sidebar nav a.active { background: #eef2ff; color: #4338ca; }
+    .sidebar nav a.disabled { opacity: 0.45; pointer-events: none; }
+    .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fff; }
+    .topbar {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar h1 { font-size: 1.05rem; font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .user-badge {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .security-badge {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-logout:hover { background: #f8fafc; }
+    .content { padding: 2rem; flex: 1; }
+    .profile-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.75rem;
+      max-width: 720px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .profile-card h2 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+    .profile-meta { color: #64748b; font-size: 0.9rem; margin-bottom: 1rem; }
+    .profile-bio { color: #334155; margin-bottom: 1.25rem; line-height: 1.7; }
+    .badge-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .status-badge {
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-badge.admin { background: #fef3c7; color: #92400e; }
+    .status-badge.premium { background: #d1fae5; color: #065f46; }
+    .status-badge.member { background: #e2e8f0; color: #475569; }
+    .field-grid { display: grid; gap: 1rem; max-width: 520px; }
+    label.field-label { display: block; font-size: 0.82rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem; }
+    .field-input, .field-textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: #0f172a;
+      background: #fff;
+      font-family: inherit;
+    }
+    .field-textarea { min-height: 100px; resize: vertical; }
+    .field-input:focus, .field-textarea:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .btn-primary {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.5rem;
+    }
+    .btn-primary:hover { background: #4f46e5; }
+    .save-msg { margin-top: 0.75rem; font-size: 0.85rem; }
+    .save-msg.success { color: #059669; }
+    .save-msg.error { color: #dc2626; }
+    .admin-table-wrap { overflow-x: auto; max-width: 900px; }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    table.data-table th {
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      border-bottom: 2px solid #e2e8f0;
+      color: #64748b;
+      font-weight: 600;
+    }
+    table.data-table td {
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .error-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      max-width: 640px;
+    }
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      padding: 1.5rem;
+    }
+    .login-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.06);
+    }
+    .login-card h1 { font-size: 1.5rem; margin-bottom: 0.35rem; }
+    .login-card h1 span { color: #6366f1; }
+    .login-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .login-input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: #0f172a;
+      background: #fff;
+      outline: none;
+      box-sizing: border-box;
+      font-family: inherit;
+      margin-bottom: 1rem;
+    }
+    .login-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .login-error { color: #dc2626; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+    .login-error.visible { display: block; }
+    .btn-signin {
+      width: 100%;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn-signin:hover { background: #4f46e5; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="demo-banner" class="demo-banner"></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-user">
+        <div class="avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-username" id="sidebar-username">—</div>
+        <span class="plan-badge free" id="plan-badge">FREE</span>
+      </div>
+      <nav>
+        <a href="/">My Profile</a>
+        <a href="/edit" class="active">Edit Profile</a>
+        <a href="/admin" id="nav-admin" class="disabled">Admin Panel</a>
+      </nav>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <h1>Edit Profile</h1>
+        <div class="topbar-right">
+          <span class="security-badge" id="security-badge" style="display:none">🛡 Mass Assignment Protected</span>
+          <div class="user-badge" id="user-badge">—</div>
+          <button type="button" class="btn-logout" id="btn-logout">Sign Out</button>
+        </div>
+      </header>
+      <main class="content">
+        <div class="profile-card">
+          <form id="edit-form" class="field-grid">
+            <div>
+              <label class="field-label" for="bio">Bio</label>
+              <textarea class="field-textarea" id="bio" name="bio"></textarea>
+            </div>
+            <div>
+              <label class="field-label" for="jobTitle">Job Title</label>
+              <input class="field-input" id="jobTitle" name="jobTitle">
+            </div>
+            <div>
+              <label class="field-label" for="company">Company</label>
+              <input class="field-input" id="company" name="company">
+            </div>
+            <div>
+              <label class="field-label" for="email">Email</label>
+              <input class="field-input" id="email" name="email" type="email">
+            </div>
+            <button type="submit" class="btn-primary">Save Profile</button>
+          </form>
+          <div class="save-msg" id="save-msg"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    var authToken = localStorage.getItem('authToken');
+    var currentUser = null;
+    var isAdminAccess = false;
+    var isProtected = false;
+
+    function authHeaders(json) {
+      var h = { 'Authorization': 'Bearer ' + authToken };
+      if (json) h['Content-Type'] = 'application/json';
+      return h;
+    }
+
+    function planBadgeClass(plan) {
+      if (plan === 'admin') return 'admin';
+      if (plan === 'pro') return 'pro';
+      return 'free';
+    }
+
+    function planLabel(plan) {
+      if (plan === 'admin') return 'ADMIN';
+      if (plan === 'pro') return 'PRO';
+      return 'FREE';
+    }
+
+    function renderSidebarUser(user) {
+      document.getElementById('sidebar-avatar').textContent = (user.username || '?').charAt(0).toUpperCase();
+      document.getElementById('sidebar-username').textContent = user.username;
+      var badge = document.getElementById('plan-badge');
+      if (isProtected) {
+        badge.textContent = 'MEMBER';
+        badge.className = 'plan-badge free';
+      } else {
+        badge.textContent = planLabel(user.plan);
+        badge.className = 'plan-badge ' + planBadgeClass(user.plan);
+      }
+      document.getElementById('user-badge').textContent = user.username;
+      updateAdminNav();
+    }
+
+    function updateAdminNav() {
+      var link = document.getElementById('nav-admin');
+      if (!link) return;
+      if (isProtected) {
+        link.classList.remove('disabled');
+      } else {
+        link.classList.toggle('disabled', !(currentUser && currentUser.isAdmin));
+      }
+    }
+
+    document.getElementById('btn-logout').addEventListener('click', async function() {
+      var token = localStorage.getItem('authToken');
+      if (token) {
+        try { await fetch('/api/logout', { method:'POST', headers:{'Authorization':'Bearer '+token} }); }
+        catch(e) {}
+      }
+      localStorage.removeItem('authToken');
+      window.location.href = '/login';
+    });
+
+    function ensureAuth() {
+      if (!authToken) { window.location.href = '/login'; return Promise.reject(); }
+      return fetch('/api/me', { headers: authHeaders() })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function(user) {
+          currentUser = user;
+          if (!isProtected && user.isAdmin) isAdminAccess = true;
+          renderSidebarUser(user);
+          return user;
+        })
+        .catch(function() {
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          return Promise.reject();
+        });
+    }
+
+    function checkAdminAccess() {
+      return fetch('/api/admin/users', { headers: authHeaders() })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+          isAdminAccess = res.ok;
+          updateAdminNav();
+          return res;
+        });
+    }
+
+    function applyConfig(cfg) {
+      isProtected = cfg.mode === 'protected';
+      var b = document.getElementById('demo-banner');
+      if (cfg.mode === 'protected') {
+        Object.assign(b.style, { background: '#d1fae5', borderColor: '#059669', color: '#065f46' });
+        b.textContent = '✅ Demo — Protected Mode (port ' + cfg.port + ')';
+        var sec = document.getElementById('security-badge');
+        if (sec) sec.style.display = '';
+      } else {
+        Object.assign(b.style, { background: '#fee2e2', borderColor: '#dc2626', color: '#991b1b' });
+        b.textContent = '⚠️ Demo — Vulnerable Mode (port ' + cfg.port + ')';
+      }
+    }
+
+    fetch('/api/config').then(function(r) { return r.json(); }).then(function(cfg) {
+      applyConfig(cfg);
+      bootPage();
+    });
+
+    function bootPage() {
+      ensureAuth().then(function(user) {
+        document.getElementById('bio').value = user.bio || '';
+        document.getElementById('jobTitle').value = user.jobTitle || '';
+        document.getElementById('company').value = user.company || '';
+        document.getElementById('email').value = user.email || '';
+      }).catch(function() {});
+
+      document.getElementById('edit-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var msg = document.getElementById('save-msg');
+        var body = {
+          bio: document.getElementById('bio').value,
+          jobTitle: document.getElementById('jobTitle').value,
+          company: document.getElementById('company').value,
+          email: document.getElementById('email').value
+        };
+        fetch('/api/profile', {
+          method: 'PATCH',
+          headers: authHeaders(true),
+          body: JSON.stringify(body)
+        })
+          .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+          .then(function(res) {
+            currentUser = res.data;
+            renderSidebarUser(res.data);
+            msg.textContent = 'Profile saved successfully.';
+            msg.className = 'save-msg success';
+          })
+          .catch(function(err) {
+            msg.textContent = err.message;
+            msg.className = 'save-msg error';
+          });
+      });
+    }
+  </script>
+</body>
+</html>

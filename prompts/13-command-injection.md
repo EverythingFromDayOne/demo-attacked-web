@@ -4,12 +4,12 @@
 
 | Server type | Theme |
 |-------------|-------|
-| Attacker server / Attack guide | Clone `DASHBOARD_HTML` from `reverse-tabnabbing/attacker-server.js` — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. Copy `<style>` verbatim. |
+| Attacker server / Attack guide | Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` verbatim — `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font. The HTML lives in `public/guide.html`, served via `res.sendFile`. |
 | Internal / target server | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text |
 | Victim servers | Realistic product UI matching their brand |
 
 Attacker/guide pages — non-negotiable rules:
-- Copy the `<style>` block from `DASHBOARD_HTML` verbatim. Never recreate or paraphrase it.
+- Copy the `<style>` block from `reverse-tabnabbing/public/guide.html` verbatim. Never recreate or paraphrase it.
 - Body layout: `padding: 2rem` on body. No `max-width` wrapper div. No centering.
 - Panels: use `.flow-box` and `.credentials-panel` classes. These must be full-width — never add `max-width` to them, not in CSS and not as inline `style` attributes. Only `<p>` text elements may use `max-width` for line-length readability.
 - Navigation: fixed bottom-left `target-switcher` ONLY. No other open/link buttons.
@@ -215,8 +215,8 @@ Note in the UI (small text below the Sign Out button, visible only to the develo
 ```json
 {
   "scripts": {
-    "start": "node victim-server.js",
-    "victim": "node victim-server.js"
+    "start":      "node victim-server.js",
+    "vulnerable": "node victim-server.js"
   },
   "dependencies": {
     "express": "^4.18.2"
@@ -230,7 +230,7 @@ Note in the UI (small text below the Sign Out button, visible only to the develo
 
 ### File: `command-injection/attack-guide-server.js`
 
-Open `reverse-tabnabbing/attacker-server.js`. Find the `DASHBOARD_HTML` constant. Copy its entire `<style>` block **verbatim** — every rule, every value, character for character. Do not rewrite, summarize, or recreate it. Paste it as-is into the attack guide's HTML template.
+Open `reverse-tabnabbing/public/guide.html`. Copy its entire `<style>` block **verbatim** — every rule, every value, character for character. Do not rewrite, summarize, or recreate it. Paste it as-is into `public/guide.html` for this demo.
 
 Then build the page content inside `.flow-box` and `.credentials-panel` elements using the style classes already defined in that copied CSS.
 
@@ -369,7 +369,7 @@ No other navigation buttons anywhere on the page.
 ```json
 {
   "scripts": {
-    "attacker": "node attack-guide-server.js"
+    "guide": "node attack-guide-server.js"
   },
   "dependencies": {
     "express": "^4.18.2"
@@ -453,7 +453,7 @@ Display this error in red below the Run button.
 ```json
 {
   "scripts": {
-    "victim-protected": "node victim-protected-server.js"
+    "secure": "node victim-protected-server.js"
   }
 }
 ```
@@ -467,9 +467,9 @@ Display this error in red below the Run button.
   "name": "command-injection-demo",
   "version": "1.0.0",
   "scripts": {
-    "victim": "node victim-server.js",
-    "attacker": "node attack-guide-server.js",
-    "victim-protected": "node victim-protected-server.js"
+    "vulnerable":  "node victim-server.js",
+    "guide":       "node attack-guide-server.js",
+    "secure":      "node victim-protected-server.js"
   },
   "dependencies": {
     "express": "^4.18.2",

@@ -12,6 +12,7 @@
  */
 
 const express = require('express');
+const path = require('path');
 const cookieParser = require('cookie-parser');
 
 const app = express();
@@ -50,6 +51,7 @@ const ARTICLES = {
   },
 };
 
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 
@@ -298,65 +300,6 @@ function buildHeader() {
   );
 }
 
-function buildHomeHtml() {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TechBlog — Tech News &amp; Insights</title>
-  <style>${sharedStyles()}</style>
-</head>
-<body>
-  <div class="demo-banner vulnerable">⚠️ VULNERABLE: External links use rel="opener" — window.opener accessible from new tab</div>
-  ${buildHeader()}
-  <main>
-    <h1 class="page-title">Latest Articles</h1>
-    <p class="page-subtitle">Curated reads for engineers, designers, and tech leaders.</p>
-
-    <div class="article-grid">
-      <article class="article-card">
-        <h2><a href="/articles/1">The Hidden Cost of Technical Debt</a></h2>
-        <div class="article-meta">12 min read · Engineering</div>
-        <a class="read-link" href="/articles/1">Read Article →</a>
-      </article>
-
-      <article class="article-card">
-        <h2>
-          <a href="http://localhost:${ATTACKER_PORT}" target="_blank" rel="opener nofollow">
-            How AI Is Reshaping Frontend Development
-          </a>
-          <span class="external-badge">↗ External</span>
-        </h2>
-        <div class="article-meta">8 min read · AI &amp; Tools</div>
-        <!--
-          ⚠️ VULNERABILITY: rel="opener" explicitly grants window.opener access.
-          Without this, Chrome 88+ implicitly adds noopener and blocks the attack.
-          In real codebases this appears in old code, third-party widgets, or
-          libraries that predate the Chrome 88 default change (January 2021).
-        -->
-        <a href="http://localhost:${ATTACKER_PORT}" target="_blank" rel="opener nofollow" class="read-link">
-          Read Full Article →
-        </a>
-      </article>
-
-      <article class="article-card">
-        <h2><a href="/articles/3">Building Resilient Microservices</a></h2>
-        <div class="article-meta">15 min read · Architecture</div>
-        <a class="read-link" href="/articles/3">Read Article →</a>
-      </article>
-
-      <article class="article-card">
-        <h2><a href="/articles/4">CSS Container Queries in Production</a></h2>
-        <div class="article-meta">6 min read · Frontend</div>
-        <a class="read-link" href="/articles/4">Read Article →</a>
-      </article>
-    </div>
-  </main>
-</body>
-</html>`;
-}
-
 function buildArticleHtml(id) {
   const article = ARTICLES[id];
   if (!article) return null;
@@ -386,8 +329,12 @@ function buildArticleHtml(id) {
 </html>`;
 }
 
+app.get('/api/config', function (req, res) {
+  res.json({ mode: 'vulnerable', port: PORT });
+});
+
 app.get('/', function (req, res) {
-  res.send(buildHomeHtml());
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/articles/:id', function (req, res) {
