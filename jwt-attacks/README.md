@@ -42,13 +42,15 @@ Three terminals:
 
 ```
 npm run vulnerable           # :3034
-npm run guide            # :3035
-npm run secure # :3036
+npm run guide                # :3035
+npm run secure               # :3036
 ```
 
 ---
 
-## Attack Walkthrough — alg:none
+## Attack Walkthrough
+
+### alg:none
 
 1. Open **localhost:3035**
 2. Click **Login → :3034** (alice / hunter2)
@@ -56,9 +58,7 @@ npm run secure # :3036
 4. Click **Test on Vulnerable :3034** — `🚨 ADMIN ACCESS GRANTED`
 5. Click **Test on Protected :3036** — `✗ Rejected`
 
----
-
-## Attack Walkthrough — Weak Secret
+### Weak Secret
 
 1. With alice's token in the token field
 2. Click **⚡ Crack HS256 Secret**
@@ -69,14 +69,23 @@ npm run secure # :3036
 
 ---
 
+## Protected Demo
+
+Steps 5 and 6 in each walkthrough above test the protected server at **localhost:3036** — forged tokens are rejected.
+
+---
+
 ## Vulnerable Lines
 
 ```js
-// ⚠️ Trusts the alg field from the token header
-const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
-if (header.alg === 'none') { /* skip verification */ }
+// ⚠️ Trusts the alg field from the token header — alg:none skips HMAC check
+if (header.alg === 'none') {
+  const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+  req.user = payload;
+  return next();
+}
 
-// ⚠️ Weak secret — in the wordlist
+// ⚠️ Weak secret — in every JWT wordlist; forge any payload once cracked
 const JWT_SECRET = 'secret';
 ```
 
@@ -88,10 +97,17 @@ const JWT_SECRET = 'secret';
 // ✅ Never read alg from the token — whitelist it here
 jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
 
-// ✅ Strong secret
+// ✅ Strong secret — load from process.env.JWT_SECRET in production
 const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
-// Stored in process.env.JWT_SECRET, not hardcoded
 ```
+
+---
+
+## Why It Works
+
+AuthVault (3034): `jwt.verify()` reads `alg` FROM the token → skips HMAC check. Forged token accepted. role set to `"admin"`. No secret needed.
+
+Attacker runs: `HMAC-SHA256(header.payload, "secret")` → matches token signature. Signs new token with `role:"admin"` using `"secret"`. Server accepts — valid signature, just forged payload.
 
 ---
 
@@ -110,3 +126,13 @@ const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
 the signature. It should only be used AFTER `jwt.verify()` — never as a
 replacement. Using `jwt.decode()` for authorization is equivalent to having no
 auth at all.
+
+---
+
+## Credentials
+
+| User | Password | Role |
+|------|----------|------|
+| alice | hunter2 | developer |
+| bob | correct-horse | developer |
+| admin | Adm1nS3cr3t! | admin |

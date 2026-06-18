@@ -34,9 +34,9 @@ const vaultState = {
   accountPublic: false,
 };
 
-// ⚠️ VULNERABILITY: No X-Frame-Options or CSP frame-ancestors header.
-//    Any page on any origin can embed this app inside an <iframe> and
-//    position invisible interactive elements over it.
+// ⚠️ VULNERABLE — no X-Frame-Options or CSP frame-ancestors header. Any page on
+//    any origin can embed this app in a transparent <iframe> and position invisible
+//    buttons over real UI — the victim clicks "Claim Prize" but hits "Delete All".
 
 app.use(express.static(path.join(__dirname, 'public')));
 

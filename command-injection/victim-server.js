@@ -72,6 +72,8 @@ app.post('/api/logout', requireAuth, function (req, res) {
 app.post('/api/ping', requireAuth, function (req, res) {
   const hostname = req.body.hostname || '';
   const command = 'ping ' + PING_FLAG + ' ' + hostname;
+  // ⚠️ VULNERABLE — exec() spawns a shell, so ;, &&, and | chain additional
+  //    commands. Input "localhost & whoami" runs ping AND whoami in one call.
   exec(command, { timeout: 10000 }, function (error, stdout, stderr) {
     res.json({ output: stdout || stderr, error: error ? error.message : undefined });
   });

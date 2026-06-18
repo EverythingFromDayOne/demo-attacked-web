@@ -26,18 +26,32 @@ Victim sees "session expired" login prompt, enters credentials → stolen
 
 ---
 
+## How to Run
+
+```bash
+cd demo-attacked/reverse-tabnabbing
+npm install
+```
+
+Three terminals:
+
+```
+npm run vulnerable           # :3016
+npm run guide                # :3017
+npm run secure               # :3018
+```
+
+---
+
 ## Attack Walkthrough
 
-1. `cd demo-attacked/reverse-tabnabbing && npm install`
-2. Terminal 1: `npm run vulnerable` → TechBlog at **localhost:3016**
-3. Terminal 2: `npm run guide` → Attacker at **localhost:3017**
-4. Open **localhost:3016** — you are logged in as Alex Reader.
-5. Click **"How AI Is Reshaping Frontend Development ↗"** — a new tab opens with the external article.
-6. Read a sentence or two (the tab swap has already happened silently).
-7. Switch back to the original tab.
-8. You are now on **localhost:3017/phish** — a TechBlog login page asking you to re-authenticate. The URL gives it away, but most users don't check.
-9. Type any credentials and submit.
-10. Open **localhost:3017/dashboard** — your credentials appear instantly.
+1. Open **localhost:3016** — you are logged in as Alex Reader.
+2. Click **"How AI Is Reshaping Frontend Development ↗"** — a new tab opens with the external article.
+3. Read a sentence or two (the tab swap has already happened silently).
+4. Switch back to the original tab.
+5. You are now on **localhost:3017/phish** — a TechBlog login page asking you to re-authenticate. The URL gives it away, but most users don't check.
+6. Type any credentials and submit.
+7. Open **localhost:3017/dashboard** — your credentials appear instantly.
 
 ---
 
@@ -49,6 +63,40 @@ Victim sees "session expired" login prompt, enters credentials → stolen
 4. On the attacker page, `window.opener` is `null` — the redirect silently failed.
 
 Use the victim switcher on the attacker dashboard to open **3016** or **3018** in a new tab.
+
+---
+
+## Vulnerable Lines
+
+```html
+<!-- ⚠️ target="_blank" without rel="noopener" — window.opener lets the new tab
+     redirect the original page silently (reverse tabnabbing) -->
+<a href="http://localhost:3017" target="_blank">
+  How AI Is Reshaping Frontend Development
+</a>
+```
+
+---
+
+## The Fix
+
+```html
+<!-- ✅ rel="noopener noreferrer" — window.opener is null; Referer header suppressed -->
+<a href="http://localhost:3017" target="_blank" rel="noopener noreferrer">
+  How AI Is Reshaping Frontend Development
+</a>
+```
+
+```js
+// ✅ Server-level defense-in-depth for Referer leakage
+res.setHeader('Referrer-Policy', 'no-referrer');
+```
+
+---
+
+## Why It Works
+
+New tab opens — controlled by attacker (3017). Attacker page runs: `window.opener.location = 'http://localhost:3017/phishing'`. Original TechBlog tab silently redirects to a pixel-perfect phishing clone. Victim sees "session expired" login prompt, enters credentials → stolen.
 
 ---
 
@@ -92,18 +140,6 @@ rel="noopener noreferrer" → window.opener = null  ✅  (tabnabbing blocked)
 
 - `noopener`: blocks the new tab from reaching **back** into your tab
 - `noreferrer`: blocks your tab from sending data **forward** to the new tab
-
----
-
-## Vulnerable Line (Exact)
-
-**`victim-server.js`** — the external article link:
-
-```html
-<a href="http://localhost:3017" target="_blank" rel="opener nofollow">
-```
-
-The vulnerability is `rel="opener"`. Removing it (or replacing with `rel="noopener noreferrer"`) fully neutralises the attack.
 
 ---
 
@@ -486,7 +522,6 @@ The same arc repeats across every browser security improvement:
 
 ---
 
-<<<<<<< HEAD
 ## The `Referer` Typo — Why Two Spellings Coexist
 
 The HTTP header is spelled `Referer` (one `r`). The correct English word is `referrer` (two `r`s). This is a 1996 typo in RFC 1945 that became permanent because fixing it would have broken every HTTP implementation on the internet. The working group noticed and chose backward compatibility over correctness.
@@ -511,8 +546,6 @@ The first check (`referer`) is what every modern browser sends. The second (`ref
 
 ---
 
-=======
->>>>>>> 68c825557fec214a8cf218061641589c4826715d
 ## Attacker Routes
 
 | Route | Purpose |

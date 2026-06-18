@@ -26,55 +26,71 @@ No password change. No privilege escalation UI. Just one HTTP request.
 
 ---
 
-## What this demonstrates
-
-`Object.assign(existingRecord, req.body)` blindly merges every field in the HTTP request body into the user object. If the user model has an `isAdmin` field and the developer forgot to exclude it, any authenticated user can escalate to admin by including `"isAdmin": true` in any profile update.
-
----
-
-## Vulnerable line
-
-```js
-Object.assign(req.user, req.body); // ← no field filtering
-```
-
----
-
-## The fix
-
-```js
-const ALLOWED_PROFILE_FIELDS = ['bio', 'jobTitle', 'company', 'email'];
-const update = {};
-for (const field of ALLOWED_PROFILE_FIELDS) {
-  if (Object.prototype.hasOwnProperty.call(req.body, field)) update[field] = req.body[field];
-}
-Object.assign(req.user, update);
-```
-
----
-
-## Run the demo
+## How to Run
 
 ```bash
 cd demo-attacked/mass-assignment
 npm install
-npm run vulnerable           # terminal 1 → localhost:3046
-npm run guide         # terminal 2 → localhost:3047
-npm run secure # terminal 3 → localhost:3048
 ```
 
-### Walkthrough
+Three terminals:
+
+```
+npm run vulnerable           # :3046
+npm run guide                # :3047
+npm run secure               # :3048
+```
+
+---
+
+## Attack Walkthrough
 
 1. Open **localhost:3047** and log in as `alice` / `alice123`
 2. Click **GET /api/me** — confirm `isAdmin: false`
 3. Send PATCH with `{"bio": "test", "isAdmin": true, "isPremium": true, "plan": "admin"}`
 4. Response shows `"isAdmin": true` — privilege escalated
 5. Click **GET /api/admin/users** — now returns all users
-6. Switch to **:3048** — same attack has no effect; admin endpoint still returns 403
 
 ---
 
-## Key technical notes
+## Protected Demo
+
+1. Switch to **:3048** — same attack has no effect; admin endpoint still returns 403
+
+---
+
+## Vulnerable Lines
+
+```js
+// ⚠️ Blind merge — isAdmin, isPremium, plan are all writable by the client
+Object.assign(req.user, req.body);
+```
+
+---
+
+## The Fix
+
+```js
+// ✅ Explicit allowlist — only safe profile fields can be updated
+const ALLOWED_PROFILE_FIELDS = ['bio', 'jobTitle', 'company', 'email'];
+const update = {};
+ALLOWED_PROFILE_FIELDS.forEach(function (field) {
+  if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+    update[field] = req.body[field];
+  }
+});
+Object.assign(req.user, update);
+```
+
+---
+
+## Why It Works
+
+`Object.assign(existingRecord, req.body)` blindly merges every field in the HTTP request body into the user object. If the user model has an `isAdmin` field and the developer forgot to exclude it, any authenticated user can escalate to admin by including `"isAdmin": true` in any profile update.
+
+---
+
+## Defense Details
 
 **Two layers of defense in the protected version:**
 

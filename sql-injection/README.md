@@ -26,7 +26,7 @@ All usernames + hashed passwords returned in search results
 
 ---
 
-## Setup
+## How to Run
 
 ```bash
 cd demo-attacked/sql-injection
@@ -37,13 +37,15 @@ Three terminals:
 
 ```
 npm run vulnerable           # :3025
-npm run guide            # :3026
-npm run secure # :3027
+npm run guide                # :3026
+npm run secure               # :3027
 ```
 
 ---
 
-## Attack Walkthrough — Data Extraction
+## Attack Walkthrough
+
+### Data Extraction
 
 1. Open **localhost:3025**
 2. Search for `javascript` — see normal results
@@ -52,9 +54,7 @@ npm run secure # :3027
 
 The original query selects 5 columns; the UNION payload must also return 5 columns (the empty string `''` fills the fifth).
 
----
-
-## Attack Walkthrough — Login Bypass
+### Login Bypass
 
 1. Open **localhost:3025/admin**
 2. Username: `admin'--`  Password: `anything`
@@ -71,32 +71,55 @@ The original query selects 5 columns; the UNION payload must also return 5 colum
 
 ---
 
-## Vulnerable Lines (Exact)
-
-Search:
+## Vulnerable Lines
 
 ```js
-db.prepare(`SELECT id, title, url, tags, author FROM resources WHERE title LIKE '%${q}%' OR tags LIKE '%${q}%'`).all()
-```
+// ⚠️ String concatenation — ' UNION SELECT id,username,password,email,'' FROM users--
+db.prepare(
+  'SELECT id, title, url, tags, author FROM resources WHERE title LIKE \'%' + q + '%\' OR tags LIKE \'%' + q + '%\''
+).all();
 
-Login:
-
-```js
-db.prepare(`SELECT * FROM users WHERE username = '${username}' AND password = '${password}'`).get()
+// ⚠️ Login bypass — admin'-- comments out the password check
+db.prepare(
+  'SELECT * FROM users WHERE username = \'' + username + '\' AND password = \'' + password + '\''
+).get();
 ```
 
 ---
 
 ## The Fix
 
-Replace string interpolation with `?` placeholders:
-
 ```js
-db.prepare('SELECT ... WHERE title LIKE ? OR tags LIKE ?').all(`%${q}%`, `%${q}%`)
-db.prepare('SELECT * FROM users WHERE username = ? AND password = ?').get(username, password)
+// ✅ Parameterized queries — user input is always data, never SQL syntax
+db.prepare('SELECT ... WHERE title LIKE ? OR tags LIKE ?').all(`%${q}%`, `%${q}%`);
+db.prepare('SELECT * FROM users WHERE username = ? AND password = ?').get(username, password);
 ```
 
-`better-sqlite3` (like all proper database drivers) separates query structure from query data. The `?` placeholder is never substituted by string concatenation — the value is sent to SQLite as a typed parameter.
+---
+
+## Why It Works
+
+Database executes both SELECT statements. All usernames + hashed passwords returned in search results.
+
+---
+
+## Defense Details
+
+**Parameterized queries** are the complete defense. The separation of structure and data is enforced by the driver, not the developer's escaping.
+
+**What does NOT work:**
+
+- Manual escaping (replacing `'` with `''`) — fragile and incomplete
+- Allowlist validation — fragile for search fields where users search for special characters
+- ORMs are safe by default, but raw query escape hatches (`.query()`, `.raw()`) re-introduce the vulnerability
+
+With parameterized queries, the structure is compiled first:
+
+```
+SELECT ... WHERE title LIKE ? OR tags LIKE ?
+```
+
+Then the runtime binds `%javascript%` to each `?`. A UNION keyword inside a parameter value is not SQL syntax — it's just characters.
 
 ---
 
@@ -125,15 +148,3 @@ Then the runtime binds `%javascript%` to each `?`. A UNION keyword inside a para
 | Defense | Parameterized queries / prepared statements | Type validation (enforce string input) |
 | What can be extracted | Any table, any column the DB user can access | Any document the query can match |
 | Login bypass payload | `admin'--` or `' OR 1=1--` | `{ "password": { "$gt": "" } }` |
-
----
-
-## Defense Details
-
-**Parameterized queries** are the complete defense. The separation of structure and data is enforced by the driver, not the developer's escaping.
-
-**What does NOT work:**
-
-- Manual escaping (replacing `'` with `''`) — fragile and incomplete
-- Allowlist validation — fragile for search fields where users search for special characters
-- ORMs are safe by default, but raw query escape hatches (`.query()`, `.raw()`) re-introduce the vulnerability

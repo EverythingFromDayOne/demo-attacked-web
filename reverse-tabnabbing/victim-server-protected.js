@@ -49,7 +49,8 @@ const ARTICLES = {
   },
 };
 
-// ✅ PROTECTED: Referrer-Policy header as defense-in-depth
+// ✅ PROTECTED — Referrer-Policy: no-referrer suppresses the Referer header on all
+//    navigations from this site, even if a third-party widget omits rel="noreferrer".
 app.use(function (req, res, next) {
   res.setHeader('Referrer-Policy', 'no-referrer');
   next();

@@ -120,8 +120,13 @@ function createProfileHubApp(options) {
           update[field] = req.body[field];
         }
       });
+      // ✅ PROTECTED — explicit allowlist: isAdmin, isPremium, plan cannot be
+      //    written via PATCH. Only bio, jobTitle, company, email are accepted.
       Object.assign(req.user, update);
     } else {
+      // ⚠️ VULNERABLE — Object.assign(user, req.body) blindly copies every key
+      //    the client sends, including isAdmin, isPremium, and plan — fields
+      //    never intended to be user-writable. One PATCH escalates to admin.
       Object.assign(req.user, req.body);
     }
     res.json(publicUser(req.user));

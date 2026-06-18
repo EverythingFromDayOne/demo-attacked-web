@@ -39,8 +39,8 @@ Three terminals:
 
 ```
 npm run vulnerable           # :3028
-npm run guide            # :3029
-npm run secure # :3030
+npm run guide                # :3029
+npm run secure               # :3030
 ```
 
 ---
@@ -91,17 +91,36 @@ function merge(target, source) {
 
 ## The Fix
 
-Three defenses combined:
+```js
+// ✅ PROTECTED — Object.keys() only returns own enumerable keys (not inherited),
+// and the blocklist explicitly rejects __proto__, constructor, prototype.
+function safeMerge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    if (
+      typeof source[key] === 'object' &&
+      source[key] !== null &&
+      !Array.isArray(source[key])
+    ) {
+      if (!Object.prototype.hasOwnProperty.call(target, key)) {
+        target[key] = Object.create(null);
+      }
+      safeMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+```
 
-1. `Object.keys(source)` instead of `for...in` — own keys only
-2. Explicit blocklist: skip `__proto__`, `constructor`, `prototype`
-3. `Object.create(null)` for intermediate objects — no prototype to pollute
-
-Any one of the three alone is sufficient. All three together is defense in depth.
+Three defenses combined: `Object.keys()` for own keys only, explicit blocklist for `__proto__` / `constructor` / `prototype`, and `Object.create(null)` for intermediate objects so there is no prototype to pollute. Any one alone is sufficient; all three is defense in depth.
 
 ---
 
-## Why This Is Dangerous
+## Why It Works
 
 Unlike SQL injection (one query) or XSS (one user's browser), prototype pollution
 is **process-wide and permanent until server restart**. One request from one
@@ -109,3 +128,15 @@ attacker breaks authentication for every user on the server simultaneously.
 
 This is why supply-chain attacks that introduce prototype pollution in npm
 packages (lodash `merge`, jQuery `extend`, `qs`) are considered critical severity.
+
+---
+
+## Defense Details
+
+Three defenses combined:
+
+1. `Object.keys(source)` instead of `for...in` — own keys only
+2. Explicit blocklist: skip `__proto__`, `constructor`, `prototype`
+3. `Object.create(null)` for intermediate objects — no prototype to pollute
+
+Any one of the three alone is sufficient. All three together is defense in depth.

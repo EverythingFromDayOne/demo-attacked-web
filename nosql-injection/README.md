@@ -37,8 +37,8 @@ Three terminals:
 
 ```
 npm run vulnerable           # :3022
-npm run guide            # :3023
-npm run secure # :3024
+npm run guide                # :3023
+npm run secure               # :3024
 ```
 
 ---
@@ -62,13 +62,11 @@ npm run secure # :3024
 
 ---
 
-## Vulnerable Line (Exact)
-
-**`victim-server.js`** — `POST /login`:
+## Vulnerable Lines
 
 ```js
-const user = findOne({ username, password });
-// password was { "$gt": "" } — operator evaluated, password never compared
+// ⚠️ req.body passed directly into query — { "password": { "$gt": "" } } bypasses login
+const user = findOne({ username: username, password: password });
 ```
 
 ---
@@ -76,10 +74,26 @@ const user = findOne({ username, password });
 ## The Fix
 
 ```js
+// ✅ Reject non-string fields — operators only execute when the field is an object
 if (typeof username !== 'string' || typeof password !== 'string') {
   return res.redirect('/login?error=1');
 }
+const user = findOne({ username: username, password: password });
 ```
+
+---
+
+## Why It Works
+
+MongoDB evaluates: "is password > empty string?" → TRUE for every user. Login succeeds. No password required.
+
+---
+
+## Defense Details
+
+**Why type checking works:** MongoDB operator injection requires the query field to be an object. `{ password: { $gt: '' } }` executes the operator. `{ password: "$gt: ''" }` (a string) does exact string comparison and fails.
+
+**Defense in depth:** In production, also use Mongoose schema validation, `express-mongo-sanitize` middleware, and input length limits.
 
 ---
 
@@ -103,8 +117,11 @@ The login form sends JSON via `fetch()` so normal string logins work. The inject
 
 ---
 
-## Defense Details
+## Credentials
 
-**Why type checking works:** MongoDB operator injection requires the query field to be an object. `{ password: { $gt: '' } }` executes the operator. `{ password: "$gt: ''" }` (a string) does exact string comparison and fails.
-
-**Defense in depth:** In production, also use Mongoose schema validation, `express-mongo-sanitize` middleware, and input length limits.
+| User | Password | Role |
+|------|----------|------|
+| alice | hunter2 | developer |
+| bob | correct-horse | developer |
+| admin | Adm1nS3cr3t! | admin |
+| carol | letmein | developer |

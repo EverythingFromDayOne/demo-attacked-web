@@ -88,7 +88,7 @@ app.get('/api/session', function (req, res) {
   res.json(payload);
 });
 
-// ✅ PROTECTED SEARCH — parameterized LIKE
+// ✅ PROTECTED SEARCH — parameterized LIKE; user input is always data, never SQL syntax
 app.get('/api/search', function (req, res) {
   const q = req.query.q || '';
   let results = [];
@@ -114,7 +114,7 @@ app.get('/search', sendIndex);
 app.get('/admin', sendIndex);
 app.get('/admin/dashboard', sendIndex);
 
-// ✅ PROTECTED LOGIN — parameterized WHERE
+// ✅ PROTECTED LOGIN — parameterized WHERE; admin'-- is treated as a literal username
 app.post('/login', function (req, res) {
   const username = req.body.username || '';
   const password = req.body.password || '';

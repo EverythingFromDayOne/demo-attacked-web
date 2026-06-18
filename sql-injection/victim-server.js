@@ -89,7 +89,9 @@ app.get('/api/session', function (req, res) {
   res.json(payload);
 });
 
-// ⚠️ VULNERABLE SEARCH — string interpolation in LIKE clause
+// ⚠️ VULNERABLE SEARCH — string concatenation in LIKE clause. Payload:
+// ' UNION SELECT id,username,password,email,'' FROM users-- terminates the
+// string early and injects a second SELECT that returns the users table.
 app.get('/api/search', function (req, res) {
   const q = req.query.q || '';
   let results = [];
@@ -115,7 +117,8 @@ app.get('/search', sendIndex);
 app.get('/admin', sendIndex);
 app.get('/admin/dashboard', sendIndex);
 
-// ⚠️ VULNERABLE LOGIN — string interpolation in WHERE clause
+// ⚠️ VULNERABLE LOGIN — string concatenation in WHERE clause. Payload admin'--
+// closes the username string, comments out the password check, and logs in as admin.
 app.post('/login', function (req, res) {
   const username = req.body.username || '';
   const password = req.body.password || '';

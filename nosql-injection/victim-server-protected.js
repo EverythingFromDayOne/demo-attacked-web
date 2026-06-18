@@ -81,9 +81,9 @@ app.get('/login', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ✅ PROTECTED: reject non-string body fields.
-// MongoDB operators only execute when the query field is an object.
-// Enforcing typeof === 'string' means the query always uses exact equality.
+// ✅ PROTECTED — reject non-string body fields before query construction.
+//    MongoDB operators ($gt, $ne, $regex) only execute when the field is an object.
+//    Enforcing typeof === 'string' means the query always uses exact equality.
 app.post('/login', function (req, res) {
   const username = req.body.username;
   const password = req.body.password;

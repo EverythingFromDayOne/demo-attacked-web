@@ -11,6 +11,8 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = 3036;
 
+// ✅ PROTECTED — cryptographically random 64-byte secret; not in any wordlist.
+//    In production, load from process.env.JWT_SECRET, never hardcode.
 const JWT_SECRET = crypto.randomBytes(64).toString('hex');
 const JWT_EXPIRES = '2h';
 
@@ -32,6 +34,8 @@ function verifyToken(req, res, next) {
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
   try {
+    // ✅ PROTECTED — never read alg from the token; whitelist allowed algorithms here.
+    //    alg:none tokens and algorithm-confusion attacks are rejected before decode.
     req.user = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     if (req.user.jti && tokenDenylist.has(req.user.jti)) {
       return res.status(401).json({ error: 'Token has been revoked' });

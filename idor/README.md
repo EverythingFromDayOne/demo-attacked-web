@@ -27,56 +27,67 @@ Enumerate IDs 1–12 → all 4 employees' salaries exposed in < 1 second
 
 ---
 
-## What this demonstrates
-
-The server checks authentication ("are you logged in?") but skips authorization ("do you own this resource?"). Because payslip IDs are sequential integers, an attacker who can see their own payslip at `/api/payslips/1` can read every other employee's payslip by incrementing the number.
-
----
-
-## Vulnerable line
-
-`victim-server.js` (via `payroll-app.js`):
-
-```js
-// ⚠️ No ownership check — user_id is never verified
-const payslip = db.prepare('SELECT * FROM payslips WHERE id = ?').get(id);
-```
-
----
-
-## The fix
-
-```js
-// ✅ Must match BOTH the id AND the requesting user
-const payslip = db.prepare(
-  'SELECT * FROM payslips WHERE id = ? AND user_id = ?'
-).get(id, req.user.id);
-```
-
----
-
-## Run the demo
+## How to Run
 
 ```bash
 cd demo-attacked/idor
 npm install
-npm run vulnerable           # terminal 1 → localhost:3040
-npm run guide         # terminal 2 → localhost:3041
-npm run secure # terminal 3 → localhost:3042
 ```
 
-### Walkthrough
+Three terminals:
+
+```
+npm run vulnerable           # :3040
+npm run guide                # :3041
+npm run secure               # :3042
+```
+
+---
+
+## Attack Walkthrough
 
 1. Open **localhost:3041**
 2. Click **Login → :3040** as alice
 3. Fetch payslip ID **1** → alice's own payslip (expected)
 4. Fetch payslip ID **7** → Charlie's payslip, annual salary $125,000 (IDOR)
 5. Click **⚡ Enumerate IDs 1–12** → all 12 payslips returned, all 4 salary bands exposed
-6. Switch to **:3042**, log in as alice, fetch ID **7** → 404 (ownership check blocks it)
 
 ---
 
-## Key concepts
+## Protected Demo
+
+1. Switch to **:3042**, log in as alice, fetch ID **7** → 404 (ownership check blocks it)
+
+---
+
+## Vulnerable Lines
+
+```js
+// ⚠️ No ownership check — user_id is never verified against req.user.id
+const payslip = db.prepare('SELECT * FROM payslips WHERE id = ?').get(req.params.id);
+```
+
+---
+
+## The Fix
+
+```js
+// ✅ Match both id AND user_id; return 404 (not 403) to hide record existence
+const payslip = db.prepare(
+  'SELECT * FROM payslips WHERE id = ? AND user_id = ?'
+).get(req.params.id, req.user.id);
+if (!payslip) return res.status(404).json({ error: 'Payslip not found' });
+```
+
+---
+
+## Why It Works
+
+The server checks authentication ("are you logged in?") but skips authorization ("do you own this resource?"). Because payslip IDs are sequential integers, an attacker who can see their own payslip at `/api/payslips/1` can read every other employee's payslip by incrementing the number.
+
+---
+
+## Defense Details
 
 **Authentication vs Authorization:** Being logged in proves identity. It does not prove ownership of a resource. Every resource endpoint must check both.
 

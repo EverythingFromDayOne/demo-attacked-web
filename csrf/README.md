@@ -26,82 +26,100 @@ $9,000 transferred. Victim never clicked anything on the bank's site.
 
 ---
 
+## How to Run
+
+```bash
+cd demo-attacked/csrf
+npm install
+```
+
+Three terminals:
+
+```
+npm run vulnerable           # :3010
+npm run guide                # :3011
+npm run secure               # :3012
+```
+
+---
+
 ## Attack Walkthrough
 
-1. `cd demo-attacked/csrf && npm install`
-2. Terminal 1: `npm run vulnerable` → NetBank at **localhost:3010**
-3. Terminal 2: `npm run guide` → Attacker at **localhost:3011**
-4. Open **localhost:3010** → log in as `john.doe` / `password123`
-5. Note balance: **$50,000.00**
-6. Open **localhost:3011** → read the attack flow, then click **Open Lure Page**
-7. Lure page auto-submits the hidden form — you see a fake ShopNest "reward" confirmation
-8. Return to **localhost:3010** → balance is now **$40,999.00** ($9,000 POST + $1 GET)
+1. Open **localhost:3010** → log in as `john.doe` / `password123`
+2. Note balance: **$50,000.00**
+3. Open **localhost:3011** → read the attack flow, then click **Open Lure Page**
+4. Lure page auto-submits the hidden form — you see a fake ShopNest "reward" confirmation
+5. Return to **localhost:3010** → balance is now **$40,999.00** ($9,000 POST + $1 GET)
 
 > The main attack is the **$9,000 wire transfer** via hidden POST form. The lure page also fires a GET-based CSRF via `<img>` for an additional **$1**.
 
 ---
 
-## GET-Based CSRF Variant (Bonus)
+## Protected Demo
 
-The lure page includes:
+```bash
+# Terminal 1 — vulnerable
+npm run vulnerable          # port 3010
 
-```html
-<img src="http://localhost:3010/transfer-get?recipient=Attacker_GET&account=HACK-GET&amount=1">
+# Terminal 2 — protected
+npm run secure  # port 3012
+
+# Terminal 3 — attacker (targets port 3010 by default)
+npm run guide        # port 3011
 ```
 
-This demonstrates that if an endpoint mutates state on a **GET** request, no form and no JavaScript is required — an `<img>` tag on any page can trigger it.
-
-The vulnerable server exposes `GET /transfer-get` which processes transfers from query parameters. The protected server returns **405 Method Not Allowed**.
+Log into both NetBank instances, then open the lure page. The vulnerable account loses $9,001; the protected account balance stays at $50,000.
 
 ---
 
-## Vulnerable Lines (Exact)
-
-**`victim-server.js` — `POST /transfer`**
+## Vulnerable Lines
 
 ```js
+// ⚠️ No CSRF token — any cross-origin form can trigger a transfer
 app.post('/transfer', (req, res) => {
-  if (!isAuthenticated(req)) { ... }
-  // ⚠️ VULNERABILITY: no CSRF token validation
   const { recipient, account, amount } = req.body;
   const result = processTransfer(recipient, account, amount);
-```
+});
 
-The entire absence of a CSRF token check is the vulnerability. Any site can forge a POST if the victim holds a valid session cookie.
-
-**`victim-server.js` — `GET /transfer-get`**
-
-```js
+// ⚠️ GET mutates state — CSRF via <img src="..."> needs no JavaScript
 app.get('/transfer-get', (req, res) => {
-  // ⚠️ EXTRA VULNERABILITY: GET endpoint that causes state change
   const { recipient, account, amount } = req.query;
   const result = processTransfer(recipient, account, amount);
+});
+
+// ⚠️ sameSite omitted — cookie sent on cross-origin requests
+res.cookie('nb_session', SESSION_VALUE, { httpOnly: true, path: '/' });
 ```
 
-**Session cookie — no `sameSite` attribute**
+---
+
+## The Fix
 
 ```js
-res.cookie('nb_session', SESSION_VALUE, { httpOnly: true, path: '/' });
-// httpOnly: true — correct for XSS, irrelevant for CSRF
-// sameSite omitted — cookie sent on cross-origin requests to localhost:3010
+// ✅ CSRF synchronizer token — attacker's form cannot read the real token
+if (!submitted || !stored || submitted !== stored) {
+  return res.status(403).json({ error: 'Invalid or missing CSRF token.' });
+}
+
+// ✅ SameSite=Strict — browser won't attach cookie on cross-site requests
+//    (on localhost all ports share one site; works on evil.com → bank.com)
+res.cookie('nb_session', SESSION_VALUE, { httpOnly: true, path: '/', sameSite: 'strict' });
+
+// ✅ GET must not mutate state
+app.get('/transfer-get', (req, res) => {
+  res.status(405).json({ error: 'Method not allowed. GET transfers are disabled.' });
+});
 ```
 
 ---
 
-## Why HttpOnly Doesn't Help
+## Why It Works
 
-CSRF does not need JavaScript to read the cookie. `HttpOnly` prevents JS from accessing `document.cookie`, but the **browser sends cookies automatically** on any HTTP request to the matching domain — whether that request was initiated by the same page or by a form on a completely different site.
-
-| Attack | HttpOnly helps? |
-|--------|-----------------|
-| XSS cookie theft (`document.cookie`) | Yes |
-| CSRF forged form POST | **No** — browser attaches cookie without JS |
-
-`HttpOnly` is the correct defence against XSS-based cookie theft. It is irrelevant to CSRF.
+The browser attaches the victim's cookie automatically (same-origin policy ≠ CSRF protection). NetBank receives POST /transfer — it looks like a legitimate request. $9,000 transferred. Victim never clicked anything on the bank's site.
 
 ---
 
-## Fix Explanation
+## Defense Details
 
 ### Defense 1 — Synchronizer Token Pattern
 
@@ -130,6 +148,40 @@ res.cookie('nb_session', SESSION_VALUE, { httpOnly: true, path: '/', sameSite: '
 The browser refuses to attach the cookie to requests that originated from a different site. A forged POST from `evil.com` arrives with no session cookie and fails at the auth check.
 
 > **Localhost caveat:** All `localhost` ports share the same site in modern browsers, so `SameSite=Strict` may not block cross-port requests during local demos. On separate domains (`evil.com` → `bank.com`), this is the simplest and most effective CSRF defence. The CSRF token provides protection even on localhost.
+
+| Layer | Vulnerable | Protected |
+|-------|------------|-----------|
+| CSRF token | Missing | Required on `POST /transfer` |
+| SameSite cookie | Omitted | `strict` |
+| GET state change | `GET /transfer-get` mutates balance | Returns 405 |
+| HttpOnly | `true` (XSS protection only) | `true` |
+
+---
+
+## GET-Based CSRF Variant (Bonus)
+
+The lure page includes:
+
+```html
+<img src="http://localhost:3010/transfer-get?recipient=Attacker_GET&account=HACK-GET&amount=1">
+```
+
+This demonstrates that if an endpoint mutates state on a **GET** request, no form and no JavaScript is required — an `<img>` tag on any page can trigger it.
+
+The vulnerable server exposes `GET /transfer-get` which processes transfers from query parameters. The protected server returns **405 Method Not Allowed**.
+
+---
+
+## Why HttpOnly Doesn't Help
+
+CSRF does not need JavaScript to read the cookie. `HttpOnly` prevents JS from accessing `document.cookie`, but the **browser sends cookies automatically** on any HTTP request to the matching domain — whether that request was initiated by the same page or by a form on a completely different site.
+
+| Attack | HttpOnly helps? |
+|--------|-----------------|
+| XSS cookie theft (`document.cookie`) | Yes |
+| CSRF forged form POST | **No** — browser attaches cookie without JS |
+
+`HttpOnly` is the correct defence against XSS-based cookie theft. It is irrelevant to CSRF.
 
 ---
 
@@ -229,3 +281,11 @@ export default function TransferForm() {
 ```
 
 **The caveat:** If the same Next.js App Router app also exposes traditional REST API routes (`/api/transfer/route.ts`) that use cookie-based auth — not server actions — **manual CSRF protection is still required on those routes**. The automatic protection only covers server actions, not `route.ts` handlers. A partially migrated codebase with a mix of server actions and API routes is a common real-world vulnerability surface.
+
+---
+
+## Credentials
+
+| User | Password | Role |
+|------|----------|------|
+| john.doe | password123 | account holder |

@@ -8,6 +8,8 @@
 | 3006 | Attacker collector | `attacker-server.js` | `npm run guide` |
 | 3007 | Protected victim | `victim-server-protected.js` | `npm run secure` |
 
+---
+
 ## Attack Flow
 
 ```
@@ -21,62 +23,83 @@ Browser fetches and renders the SVG inline — executes embedded <script>
 Victim's cookie sent to attacker collector (3006)
 ```
 
-## What It Is
+---
+
+## How to Run
+
+```bash
+cd demo-attacked/xss/svg-upload
+npm install
+```
+
+Three terminals:
+
+```
+npm run vulnerable           # :3005
+npm run guide                # :3006
+npm run secure               # :3007
+```
+
+---
+
+## Attack Walkthrough
+
+1. Open `http://localhost:3006` — attacker dashboard. Click "⬇ Download payload.svg".
+2. Open `http://localhost:3005` — ConnectHub.
+3. Upload `payload.svg` as your profile avatar via the upload form.
+4. Your profile card appears in the community grid with a teal-colored avatar (looks normal).
+5. Click "View Profile →" on your profile card. A modal opens.
+6. Click "🔍 View Full Photo". The raw SVG URL opens in a new tab.
+7. The script inside the SVG fires. Cookie appears on the attacker dashboard.
+
+**Why the `<img>` tag is safe:** The community grid shows avatars via `<img src="...">`. Browsers sandbox SVG scripts inside `<img>` — they never execute. Scripts run only when the SVG URL is opened as a standalone tab (or via `<object>`, `<embed>`, or `<iframe>`).
+
+---
+
+## Vulnerable Lines
+
+```js
+// ⚠️ No file type filter — SVG with inline <script> accepted as an "image"
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ⚠️ Served with no Content-Disposition or CSP — browser executes SVG scripts
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// ⚠️ window.open(avatarUrl) removes the <img> sandbox
+window.open(profile.avatarUrl, '_blank');
+```
+
+---
+
+## The Fix
+
+```js
+// ✅ Layer 1: raster-only extension + mimetype whitelist
+fileFilter: rasterOnlyFilter,
+
+// ✅ Layer 2: magic bytes verify actual file type (blocks renamed .svg → .jpg)
+if (!matchesMagicBytes(buffer)) { return cb(new Error('Invalid image')); }
+
+// ✅ Layer 3: Sharp re-encode strips embedded scripts from polyglot files
+const reencoded = await sharp(buffer).jpeg().toBuffer();
+
+// ✅ Layer 4: Content-Disposition: attachment — browser downloads, never renders
+res.setHeader('Content-Disposition', 'attachment');
+```
+
+---
+
+## Why It Works
 
 The frontend HTML is 100% clean — no `innerHTML`, no reflected parameters. The vulnerability is the server's **file-serving policy**. SVG is a full XML+JavaScript runtime. When served directly as a URL (not embedded in `<img>`), the browser renders it as a document with script execution in the same origin as the serving domain.
 
 This illustrates that XSS is not always a frontend developer mistake. A perfectly written React or vanilla JS application can still be vulnerable if the server serves user-uploaded SVG files without policy headers.
 
-## How to Run
-
-1. Terminal 1: `cd demo-attacked/xss/svg-upload && npm run vulnerable`
-2. Terminal 2: `cd demo-attacked/xss/svg-upload && npm run guide`
-3. Open `http://localhost:3006` — attacker dashboard. Click "⬇ Download payload.svg".
-4. Open `http://localhost:3005` — ConnectHub.
-5. Upload `payload.svg` as your profile avatar via the upload form.
-6. Your profile card appears in the community grid with a teal-colored avatar (looks normal).
-7. Click "View Profile →" on your profile card. A modal opens.
-8. Click "🔍 View Full Photo". The raw SVG URL opens in a new tab.
-9. The script inside the SVG fires. Cookie appears on the attacker dashboard.
-
-**Why the `<img>` tag is safe:** The community grid shows avatars via `<img src="...">`. Browsers sandbox SVG scripts inside `<img>` — they never execute. Scripts run only when the SVG URL is opened as a standalone tab (or via `<object>`, `<embed>`, or `<iframe>`).
-
-## Vulnerable Code — Exact Lines
-
-**`victim-server.js`**
-
-Cookie without HttpOnly:
-
-```js
-res.setHeader('Set-Cookie', 'member_session=MemberSarah_t0k3n_DEF012; Path=/')
-```
-
-Multer accepts all file types:
-
-```js
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
-// No fileFilter — any file type accepted, including .svg files.
-```
-
-Uploads served with no policy headers:
-
-```js
-app.use('/uploads', express.static(UPLOADS_DIR));
-// For .svg: Content-Type: image/svg+xml — no Content-Disposition, no CSP.
-```
-
-**`victim.html`** — the `window.open` call:
-
-```js
-window.open(profile.avatarUrl, '_blank')
-// Opening the SVG URL directly removes the <img> sandbox. Scripts run.
-```
-
-## Why These Lines Are Dangerous
-
 An SVG file is a valid XML document with a `<script>` element defined in the SVG spec. Browsers execute SVG scripts when rendered as a top-level document but NOT when loaded via `<img>`. The server assigns `localhost:3005` as the origin. The script runs with full access to `document.cookie` for that origin.
 
-## The Fix — Four Layers
+---
+
+## Defense Details
 
 **`victim-server-protected.js`** (port 3007)
 
@@ -129,6 +152,8 @@ app.use('/uploads', function (req, res, next) {
 }, express.static(UPLOADS_DIR));
 ```
 
+---
+
 ## Edge Cases
 
 - **`<object>` and `<embed>` are NOT sandboxed like `<img>`:** Audit all elements that load user-uploaded files.
@@ -136,6 +161,8 @@ app.use('/uploads', function (req, res, next) {
 - **Content-Disposition: attachment is browser-dependent:** Users can sometimes bypass via "Open in new tab". CSP provides a second layer.
 - **Separate cookieless domain is the strongest architectural defense:** Serve uploads from a dedicated asset domain with no `Set-Cookie` responses. GitHub uses `avatars.githubusercontent.com` for exactly this reason.
 - **X-Content-Type-Options: nosniff:** Prevents MIME-sniffing away from the declared Content-Type.
+
+---
 
 ## This Demo in Real Frameworks
 

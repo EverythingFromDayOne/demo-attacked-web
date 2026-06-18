@@ -12,6 +12,8 @@ const { randomBytes } = require('crypto');
 const app = express();
 const PORT = 3034;
 
+// ⚠️ VULNERABLE — 'secret' appears in every JWT wordlist. Once cracked, the
+//    attacker can sign arbitrary payloads (e.g. role:"admin") with a valid HMAC.
 const JWT_SECRET = 'secret';
 const JWT_EXPIRES = '2h';
 
@@ -39,6 +41,9 @@ function verifyToken(req, res, next) {
 
     const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString());
 
+    // ⚠️ VULNERABLE — alg:none: the attacker controls the alg field in the token
+    //    header. Setting it to "none" skips HMAC verification entirely — no secret
+    //    needed. Any forged payload (role:"admin") is accepted as authentic.
     if (header.alg === 'none') {
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
       if (payload.jti && tokenDenylist.has(payload.jti)) {

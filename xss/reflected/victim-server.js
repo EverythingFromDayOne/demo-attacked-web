@@ -28,8 +28,8 @@ const PRODUCTS = [
 
 app.use(express.static(path.join(__dirname)));
 
-// ⚠️ VULNERABILITY: HttpOnly omitted — JS can read this cookie
-// ✅ PROTECTED: Set HttpOnly=true so JavaScript cannot access shopper_session
+// ⚠️ VULNERABLE — HttpOnly omitted. JavaScript can read shopper_session via
+//    document.cookie once reflected XSS executes on /search.
 app.use((req, res, next) => {
   if (!req.headers.cookie || !req.headers.cookie.includes('shopper_session=')) {
     res.setHeader(
@@ -70,25 +70,18 @@ function buildProductCards() {
 app.get('/search', (req, res) => {
   const q = req.query.q || '';
 
-  // ⚠️ VULNERABILITY: Server-Side Reflection — payload embedded in HTML before browser
-  // receives the response. The browser parses this as legitimate HTML, not injected content.
-  // ✅ PROTECTED: HTML-encode req.query.q before interpolation.
-  //         '<' becomes '&lt;', '>' becomes '&gt;', '"' becomes '&quot;'
-  //         A one-liner: q.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+  // ⚠️ VULNERABLE — raw req.query.q interpolated into HTML (title + h2 below).
+  //    Server-side reflection is like innerHTML before the browser loads — the
+  //    response bytes contain real <script> tags the parser executes unconditionally.
 
   const productCards = buildProductCards();
   const resultCount = 5;
-
-  // ⚠️ VULNERABILITY: raw req.query.q interpolated into HTML (title + h2 below)
-  // ✅ PROTECTED: use a sanitize function to HTML-encode the value before interpolation
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- ⚠️ VULNERABILITY: raw req.query.q interpolated into HTML -->
-  <!-- ✅ PROTECTED: use a sanitize function to HTML-encode the value before interpolation -->
   <title>ShopNest — Search: ${q}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }

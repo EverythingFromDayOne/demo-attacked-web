@@ -45,6 +45,8 @@ app.post('/api/preview', async function (req, res) {
   }
 
   const safety = isUrlSafe(url);
+  // ✅ PROTECTED — isUrlSafe() blocks private IPs, loopback, metadata endpoints,
+  //    and non-HTTP schemes before fetch() runs. See preview-utils.js.
   if (!safety.safe) {
     return res.json({ blocked: true, reason: safety.reason });
   }

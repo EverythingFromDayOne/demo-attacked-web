@@ -108,6 +108,8 @@ function createFileVaultApp(options) {
       const uploadsDir = path.resolve(baseDir, 'uploads');
       const requestedPath = path.resolve(uploadsDir, filename);
 
+      // ✅ PROTECTED — path.resolve() + startsWith(baseDir) enforces containment.
+      //    path.join() alone normalises ../ but does NOT prevent escape outside uploads/.
       if (!requestedPath.startsWith(uploadsDir + path.sep)) {
         return res.status(403).json({ error: 'Access denied: path traversal detected' });
       }
@@ -121,6 +123,9 @@ function createFileVaultApp(options) {
     }
 
     const filePath = path.join(baseDir, 'uploads', filename);
+    // ⚠️ VULNERABLE — path.join() normalises ../ sequences but does NOT verify
+    //    the result stays inside uploads/. Payload ../../victim-server.js reads
+    //    arbitrary files the Node.js process can access.
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
 
     const content = fs.readFileSync(filePath, 'utf8');

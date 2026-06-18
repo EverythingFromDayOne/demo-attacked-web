@@ -47,11 +47,10 @@ app.post('/api/preview', async function (req, res) {
     return res.json({ success: false, error: 'URL is required' });
   }
 
-  // ⚠️ VULNERABILITY: No URL validation. The server blindly fetches whatever
-  //    URL the user supplies. If the URL points to an internal service
-  //    (localhost, 10.x.x.x, 169.254.169.254, etc.), the server will fetch it
-  //    and return the response — the browser cannot reach these addresses
-  //    directly, but the server can.
+  // ⚠️ VULNERABLE — fetch(url) with no validation. The server makes the request from
+  //    its own network, bypassing firewalls that block browser-to-internal access.
+  //    localhost, 10.x.x.x, and the metadata endpoint (169.254.169.254) are
+  //    reachable from the server but not from the attacker's browser.
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
     const body = await response.text();

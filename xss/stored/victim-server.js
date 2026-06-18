@@ -46,7 +46,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  // ⚠️ VULNERABILITY: httpOnly: false — JavaScript can read this cookie via document.cookie
+  // ⚠️ VULNERABLE — httpOnly: false lets JavaScript read agent_session via
+  //    document.cookie. Combined with innerHTML rendering, stolen tokens are trivial.
   res.cookie('agent_session', 'AgentJohn_s3ss10n_t0k3n_XYZ789', { path: '/', httpOnly: false });
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
@@ -58,7 +59,8 @@ app.post('/api/tickets', (req, res) => {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
-  // ⚠️ VULNERABILITY: raw user input stored and later rendered as HTML
+  // ⚠️ VULNERABLE — raw user input stored with no sanitization; later rendered via
+  //    innerHTML in victim.html, which parses HTML and executes event handlers.
   const ticket = {
     id: uuidv4(),
     name,

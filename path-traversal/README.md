@@ -26,52 +26,67 @@ Server reads and returns its own source code
 
 ---
 
-## What this demonstrates
+## How to Run
 
-`path.join(__dirname, 'uploads', userInput)` normalizes the path but does not prevent escape from the `uploads/` directory. `../` sequences are valid path components. The server reads and returns any file the Node.js process can access.
+```bash
+cd demo-attacked/path-traversal
+npm install
+```
 
----
+Three terminals:
 
-## Vulnerable line
-
-```js
-const filePath = path.join(__dirname, 'uploads', filename); // ← no containment check
+```
+npm run vulnerable           # :3043
+npm run guide                # :3044
+npm run secure               # :3045
 ```
 
 ---
 
-## The fix
+## Attack Walkthrough
+
+1. Open **localhost:3044** and log in as `alice` / `alice123`
+2. Fetch `../package.json` → server returns its own dependency list
+3. Fetch `../victim-server.js` → server returns its own source code
+
+---
+
+## Protected Demo
+
+1. Switch to **:3045** → same payloads return 403
+
+---
+
+## Vulnerable Lines
 
 ```js
-const uploadsDir = path.resolve(__dirname, 'uploads');
+// ⚠️ path.join normalises ../ but does NOT enforce containment inside uploads/
+const filePath = path.join(baseDir, 'uploads', filename);
+const content = fs.readFileSync(filePath, 'utf8');
+```
+
+---
+
+## The Fix
+
+```js
+// ✅ path.resolve() + startsWith() is the boundary check that actually works
+const uploadsDir = path.resolve(baseDir, 'uploads');
 const requestedPath = path.resolve(uploadsDir, filename);
 if (!requestedPath.startsWith(uploadsDir + path.sep)) {
-  return res.status(403).json({ error: 'Access denied' });
+  return res.status(403).json({ error: 'Access denied: path traversal detected' });
 }
 ```
 
 ---
 
-## Run the demo
+## Why It Works
 
-```bash
-cd demo-attacked/path-traversal
-npm install
-npm run vulnerable           # terminal 1 → localhost:3043
-npm run guide         # terminal 2 → localhost:3044
-npm run secure # terminal 3 → localhost:3045
-```
-
-### Walkthrough
-
-1. Open **localhost:3044** and log in as `alice` / `alice123`
-2. Fetch `../package.json` → server returns its own dependency list
-3. Fetch `../victim-server.js` → server returns its own source code
-4. Switch to **:3045** → same payloads return 403
+`path.join(__dirname, 'uploads', userInput)` normalizes the path but does not prevent escape from the `uploads/` directory. `../` sequences are valid path components. The server reads and returns any file the Node.js process can access.
 
 ---
 
-## Key technical note
+## Defense Details
 
 `path.sep` in the containment check matters. Without it, `/uploads-secret/file` would pass a `startsWith('/uploads')` check. With `path.sep` appended, the check is `/uploads/` — unambiguous.
 

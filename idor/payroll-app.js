@@ -127,9 +127,13 @@ function createPayrollApp(options) {
   app.get('/api/payslips/:id', requireAuth, function (req, res) {
     let payslip;
     if (isProtected) {
+      // ✅ PROTECTED — ownership check: id AND user_id must match. Returns 404
+      //    (not 403) when denied — 403 would confirm the record exists (info leak).
       payslip = db.prepare('SELECT * FROM payslips WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
       if (!payslip) return res.status(404).json({ error: 'Payslip not found' });
     } else {
+      // ⚠️ VULNERABLE — fetches by id only; no check that req.user.id owns this payslip.
+      //    Sequential IDs (1–12) let any logged-in user enumerate every employee's salary.
       payslip = db.prepare('SELECT * FROM payslips WHERE id = ?').get(req.params.id);
       if (!payslip) return res.status(404).json({ error: 'Not found' });
     }

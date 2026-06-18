@@ -148,13 +148,15 @@
 
       <article class="article-card">
         <h2>
+          <!-- ⚠️ VULNERABLE — target="_blank" without rel="noopener". window.opener
+               gives the new tab a live reference back to this page; the attacker
+               can redirect it silently (reverse tabnabbing) while the victim reads. -->
           <a href="http://localhost:3017" target="_blank">
             How AI Is Reshaping Frontend Development
           </a>
           <span class="external-badge">↗ External</span>
         </h2>
         <div class="article-meta">8 min read · AI &amp; Tools</div>
-        <!-- ⚠️ VULNERABILITY: target="_blank" without rel="noopener noreferrer" -->
         <a href="http://localhost:3017" target="_blank" class="read-link">
           Read Full Article →
         </a>

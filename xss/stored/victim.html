@@ -280,8 +280,9 @@
 
         const message = document.createElement('div');
         message.className = 'message';
-        // ⚠️  VULNERABILITY: innerHTML renders raw HTML — never do this with user input
-        // Safe alternative: element.textContent = ticket.message
+        // ⚠️ VULNERABLE — innerHTML parses ticket.message as HTML. Scripts and event
+        //    handlers (<img onerror=...>) execute with full page privileges. textContent
+        //    treats everything as literal text and never constructs DOM elements.
         message.innerHTML = ticket.message;
         card.appendChild(message);
 

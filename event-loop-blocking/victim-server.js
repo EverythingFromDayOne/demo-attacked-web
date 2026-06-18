@@ -32,6 +32,9 @@ app.get('/', function (req, res) {
 
 function runCompute(n) {
   let result = 0;
+  // ⚠️ VULNERABLE — synchronous CPU loop on the main thread. While this runs,
+  //    ALL concurrent requests (including /health) receive no response — one
+  //    slow request starves every other client until the computation finishes.
   for (let i = 0; i < n; i++) {
     result += Math.sqrt(i * Math.PI) * Math.log(i + 1);
   }
@@ -57,6 +60,9 @@ app.post('/api/compute', function (req, res) {
 app.post('/api/regex', function (req, res) {
   const pattern = req.body.pattern;
   const text = req.body.text || '';
+  // ⚠️ VULNERABLE — user-supplied regex with no timeout or complexity limit.
+  //    Catastrophic backtracking (e.g. (a+)+$ on a long string) blocks the main
+  //    thread indefinitely — same starvation effect as the CPU attack.
   const re = new RegExp(pattern);
   const match = re.test(text);
   res.json({ match: match, pattern: pattern, textLength: text.length });

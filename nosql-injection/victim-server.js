@@ -82,9 +82,10 @@ app.get('/login', function (req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ⚠️ VULNERABILITY: req.body fields are passed directly into the query object.
-// express.json() parses nested JSON, so { "password": { "$gt": "" } } becomes
-// a MongoDB operator — findOne evaluates it as a comparison, not a string match.
+// ⚠️ VULNERABLE — req.body fields are passed directly into the query object.
+// express.json() parses nested JSON, so { "password": { "$gt": "" } } becomes a
+// real JS object — findOne evaluates $gt as a comparison, not a string match.
+// Payload: {"username":"admin","password":{"$gt":""}} bypasses login with no password.
 app.post('/login', function (req, res) {
   const username = req.body.username;
   const password = req.body.password;

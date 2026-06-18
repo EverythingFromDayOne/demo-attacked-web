@@ -32,6 +32,8 @@ app.get('/', function (req, res) {
 });
 
 function runComputeInWorker(n) {
+  // ✅ PROTECTED — CPU work runs in a worker thread; the main event loop stays
+  //    free to serve /health and other requests while computation runs.
   return new Promise(function (resolve, reject) {
     const worker = new Worker(WORKER_PATH, { workerData: { type: 'compute', n: n } });
     const timeout = setTimeout(function () {
@@ -51,6 +53,8 @@ function runComputeInWorker(n) {
 }
 
 function runRegexInWorker(pattern, text) {
+  // ✅ PROTECTED — regex runs in a worker with a 5s timeout. Catastrophic
+  //    backtracking terminates the worker instead of blocking the event loop.
   return new Promise(function (resolve, reject) {
     const worker = new Worker(WORKER_PATH, {
       workerData: { type: 'regex', pattern: pattern, text: text },

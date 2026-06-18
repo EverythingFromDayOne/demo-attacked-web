@@ -148,13 +148,14 @@
 
       <article class="article-card">
         <h2>
+          <!-- ✅ PROTECTED — rel="noopener noreferrer" sets window.opener to null
+               (blocks tabnabbing) and suppresses the Referer header (blocks token leak). -->
           <a href="http://localhost:3017" target="_blank" rel="noopener noreferrer">
             How AI Is Reshaping Frontend Development
           </a>
           <span class="external-badge">↗ External</span>
         </h2>
         <div class="article-meta">8 min read · AI &amp; Tools</div>
-        <!-- ✅ FIX: rel="noopener noreferrer" prevents window.opener access -->
         <a href="http://localhost:3017" target="_blank" rel="noopener noreferrer" class="read-link">
           Read Full Article →
         </a>

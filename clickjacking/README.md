@@ -26,17 +26,31 @@ Account deleted. Victim sees nothing unusual until they try to log in.
 
 ---
 
+## How to Run
+
+```bash
+cd demo-attacked/clickjacking
+npm install
+```
+
+Three terminals:
+
+```
+npm run vulnerable           # :3013
+npm run guide                # :3014
+npm run secure               # :3015
+```
+
+---
+
 ## Attack Walkthrough
 
-1. `cd demo-attacked/clickjacking && npm install`
-2. Terminal 1: `npm run vulnerable` → CloudVault at **localhost:3013**
-3. Terminal 2: `npm run guide` → Attacker at **localhost:3014**
-4. Open **localhost:3013** directly — note you have 6 files stored.
-5. Now open **localhost:3014** — you see a CloudBoost upgrade promotion.
-6. Click **"🔍 Show Overlay"** in the bottom-right corner — you can now see the transparent CloudVault iframe underneath, with "Delete All Files" aligned under the green button.
-7. Toggle overlay OFF, then click **"Claim My Free Upgrade →"**.
-8. Confirm the dialog that appears (it comes from CloudVault, not CloudBoost).
-9. Return to **localhost:3013** and refresh — all files are gone.
+1. Open **localhost:3013** directly — note you have 6 files stored.
+2. Now open **localhost:3014** — you see a CloudBoost upgrade promotion.
+3. Click **"🔍 Show Overlay"** in the bottom-right corner — you can now see the transparent CloudVault iframe underneath, with "Delete All Files" aligned under the green button.
+4. Toggle overlay OFF, then click **"Claim My Free Upgrade →"**.
+5. Confirm the dialog that appears (it comes from CloudVault, not CloudBoost).
+6. Return to **localhost:3013** and refresh — all files are gone.
 
 ---
 
@@ -51,39 +65,31 @@ Account deleted. Victim sees nothing unusual until they try to log in.
 
 ---
 
-## Vulnerable Line (Exact)
-
-**`victim-server.js`** — the vulnerability is the **absence** of a header, not the presence of bad code. Every route handler is missing:
+## Vulnerable Lines
 
 ```js
-res.setHeader('X-Frame-Options', 'DENY');
+// ⚠️ Missing header — any origin can embed this page in a transparent iframe
+// (no X-Frame-Options or CSP frame-ancestors anywhere in the middleware stack)
+app.use(express.static(path.join(__dirname, 'public')));
 ```
-
-Clickjacking vulnerabilities are **omissions**, not commissions. The app works correctly — it simply never tells the browser it must not be embedded in a frame.
 
 ---
 
-## Why the Frame-Buster Script Fails
-
-Old-school developers tried to prevent clickjacking with JavaScript:
+## The Fix
 
 ```js
-// ❌ FAILED DEFENCE — DO NOT USE
-if (window.top !== window.self) {
-  window.top.location = window.self.location;
-}
+// ✅ X-Frame-Options: DENY — no framing by anyone; SAMEORIGIN allows same-origin only
+res.setHeader('X-Frame-Options', 'DENY');
+
+// ✅ CSP frame-ancestors supersedes X-Frame-Options in modern browsers
+res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
 ```
 
-This fails because attackers use the `sandbox` attribute on the iframe:
+---
 
-```html
-<!-- sandbox WITHOUT allow-top-navigation prevents the frame-buster from
-     redirecting the parent page. The script runs but window.top.location
-     assignment is silently blocked by the sandbox. -->
-<iframe src="http://victim.com" sandbox="allow-scripts allow-forms"></iframe>
-```
+## Why It Works
 
-JavaScript cannot defend against clickjacking. Only HTTP headers can. See the commented block in `victim-server.js`.
+Clickjacking vulnerabilities are **omissions**, not commissions. The app works correctly — it simply never tells the browser it must not be embedded in a frame.
 
 ---
 
@@ -137,6 +143,30 @@ The cost of setting both is one extra line. There is no reason not to.
 res.setHeader('X-Frame-Options', 'DENY');                              // fallback: old browsers
 res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");   // modern browsers (wins)
 ```
+
+---
+
+## Why the Frame-Buster Script Fails
+
+Old-school developers tried to prevent clickjacking with JavaScript:
+
+```js
+// ❌ FAILED DEFENCE — DO NOT USE
+if (window.top !== window.self) {
+  window.top.location = window.self.location;
+}
+```
+
+This fails because attackers use the `sandbox` attribute on the iframe:
+
+```html
+<!-- sandbox WITHOUT allow-top-navigation prevents the frame-buster from
+     redirecting the parent page. The script runs but window.top.location
+     assignment is silently blocked by the sandbox. -->
+<iframe src="http://victim.com" sandbox="allow-scripts allow-forms"></iframe>
+```
+
+JavaScript cannot defend against clickjacking. Only HTTP headers can. See the commented block in `victim-server.js`.
 
 ---
 

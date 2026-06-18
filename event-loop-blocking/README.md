@@ -40,8 +40,8 @@ Three terminals:
 
 ```
 npm run vulnerable           # :3031
-npm run guide          # :3032
-npm run secure # :3033
+npm run guide                # :3032
+npm run secure               # :3033
 ```
 
 ---
@@ -55,32 +55,49 @@ npm run secure # :3033
 5. Now click **⚡ Fire ReDoS Attack → :3031**
 6. Same effect — the server is unresponsive while backtracking runs
 7. Open **localhost:3031** directly during an attack — the page won't load
-8. Open **localhost:3033** during an attack — loads instantly
+
+---
+
+## Protected Demo
+
+1. Open **localhost:3033** during an attack — loads instantly
 
 ---
 
 ## Vulnerable Lines
 
 ```js
-// CPU: no cap on n, synchronous loop blocks the event loop
+// CPU: synchronous loop blocks the event loop — all requests starve
 for (let i = 0; i < n; i++) {
   result += Math.sqrt(i * Math.PI) * Math.log(i + 1);
 }
 
-// ReDoS: user-supplied regex with no timeout or complexity limit
+// ReDoS: user-supplied regex with no timeout
 const re = new RegExp(pattern);
-const match = re.test(text);  // can run forever on catastrophic patterns
+const match = re.test(text);
 ```
 
 ---
 
 ## The Fix
 
-**Worker threads** (`worker_threads` module, built into Node.js 12+):
+```js
+// ✅ CPU work in worker thread — main event loop stays free
+const worker = new Worker(WORKER_PATH, { workerData: { type: 'compute', n: n } });
 
-- CPU-heavy work runs in a separate OS thread
-- The main event loop continues processing requests
-- A timeout on the worker prevents infinite hangs
+// ✅ Regex in worker with 5s timeout — catastrophic backtracking terminated
+const worker = new Worker(WORKER_PATH, { workerData: { type: 'regex', pattern, text } });
+```
+
+---
+
+## Why It Works
+
+Event loop blocked — Node.js can process nothing else (10–30 seconds). All other users' requests queue behind it → server appears completely down.
+
+---
+
+## Defense Details
 
 **Why `setTimeout` alone does not help:**
 
@@ -88,10 +105,6 @@ Synchronous code in Node.js cannot be interrupted by `setTimeout`. The timer
 callback sits in the event queue but the event loop is busy running the
 synchronous loop — it never reaches the timer. Only truly async operations
 (worker threads, child processes, native async I/O) keep the event loop free.
-
----
-
-## Defense in Depth
 
 | Defense | What it solves |
 |---------|---------------|

@@ -41,6 +41,8 @@ app.get('/login', function (req, res) {
 });
 
 function isValidHostname(input) {
+  // ✅ PROTECTED — hostname allowlist rejects shell metacharacters before they
+  //    reach the OS. Defense-in-depth alongside execFile().
   if (!input || typeof input !== 'string') return false;
   if (input.length > 253) return false;
   const hostnamePattern =
@@ -93,6 +95,8 @@ app.post('/api/ping', requireAuth, function (req, res) {
   if (!isValidHostname(hostname)) {
     return res.status(400).json({ error: INVALID_HOST_MSG });
   }
+  // ✅ PROTECTED — execFile() passes hostname as an array argument; no shell is
+  //    invoked, so &, ;, and | are literal characters, not command separators.
   execFile('ping', PING_ARGS.concat(hostname), { timeout: 10000 }, function (error, stdout, stderr) {
     res.json({ output: stdout || stderr, error: error ? error.message : undefined });
   });

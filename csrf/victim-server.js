@@ -106,8 +106,9 @@ app.get('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// ⚠️ VULNERABILITY: no CSRF token validation — any site can forge this POST
-//    if the victim's browser holds a valid nb_session cookie.
+// ⚠️ VULNERABLE — no CSRF token validation. Any site can forge this POST if the
+//    victim's browser holds a valid nb_session cookie. HttpOnly does not help —
+//    the browser attaches cookies automatically; no JavaScript required.
 app.post('/transfer', (req, res) => {
   if (!isAuthenticated(req)) {
     return res.status(401).json({ error: 'Not authenticated.' });
@@ -123,9 +124,8 @@ app.post('/transfer', (req, res) => {
   res.json(result);
 });
 
-// ⚠️ EXTRA VULNERABILITY: GET endpoint that causes state change.
-//    CSRF via <img> tag — fires with zero JS, zero user clicks.
-//    Real rule: GET requests must NEVER mutate state (HTTP spec).
+// ⚠️ VULNERABLE — GET endpoint that mutates state. CSRF via <img src="..."> fires
+//    with zero JavaScript and zero user clicks. GET requests must never change state.
 app.get('/transfer-get', (req, res) => {
   if (!isAuthenticated(req)) {
     return res.status(401).send('Unauthorized');
