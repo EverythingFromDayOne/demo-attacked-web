@@ -38,6 +38,20 @@ ProfileHub lets users manage their profile: name, bio, job title, company. Users
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+The `// ⚠️ VULNERABLE —` / `// ✅` comments already specified below (on
+`Object.assign(req.user, req.body)` vs the allowlist version) are the required
+depth — preserve them exactly. **Required nuance for mass assignment:** name the
+specific dangerous fields explicitly (`isAdmin`, `isPremium`, `plan`) rather than
+saying "sensitive fields" generically, and explain that `Object.assign` blindly
+copies every enumerable key the client sends — it has no concept of which fields
+were meant to be user-writable versus server-internal. Also note the second
+layer in the fix: stripping `isAdmin`/`isPremium`/`plan` from the API *response*
+too, so an attacker can't even probe whether a write silently succeeded.
+
+---
+
 ## Port 3046 — Vulnerable ProfileHub
 
 ### File: `mass-assignment/victim-server.js`
@@ -471,6 +485,44 @@ When the attacker sends `{"isAdmin": true}` in a PATCH body, the response shows 
 ---
 
 ## README at `mass-assignment/README.md`
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Mass Assignment Demo — ProfileHub
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: real-world ORM/framework variants]
+## Credentials
+```
+
+Rename mapping: "What this demonstrates" → `## Why It Works`. "Vulnerable line"
+→ `## Vulnerable Lines`. "The fix" → `## The Fix`. "Run" → `## How to Run`.
+"Key technical notes" → `## Defense Details` (keep the two-layer explanation and
+the Rails/Mongoose/Django real-world variants together here). The walkthrough
+below splits: steps 1–5 (login, check isAdmin false, PATCH with isAdmin:true,
+confirm escalation, hit the admin endpoint) go under `## Attack Walkthrough`;
+step 6 (switching to :3048 and confirming no change) becomes its own
+`## Protected Demo` section. `## Credentials` table:
+
+| User | Password | Role |
+|------|----------|------|
+| alice | alice123 | member |
+| bob | bob123 | member |
+| charlie | charlie123 | member |
+| admin | admin123 | admin |
+
+---
 
 ### Attack Flow
 

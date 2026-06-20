@@ -37,6 +37,23 @@ No inline HTML template literals in server files.
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+Comments on vulnerable and protected lines are teaching material, not labels.
+Each comment must answer: what is wrong/fixed, why it is exploitable/safe, how
+the attack works mechanically, and any nuance a student would miss without
+running the demo. Never shorten an existing detailed comment — only expand it.
+
+**Required nuance for NoSQL injection:** explain that `express.json()` enables
+the attack by parsing `{ "$gt": "" }` as a real nested JS object before it ever
+reaches the route handler — the operator is live JavaScript by the time
+`findOne()` sees it. Name at least one working payload directly in the comment
+(`{ "$gt": "" }` is the canonical one). Also note that this attack is specific
+to JSON endpoints: a form-encoded body cannot express a nested object, so
+`password[$gt]=` would arrive as the literal string `"$gt="` — harmless.
+
+---
+
 ## Files to create / overwrite
 
 ```
@@ -433,6 +450,32 @@ db.users.findOne({ username: "admin", password: { $gt: "" } })
 
 ## README.md
 
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# NoSQL Injection Demo — DevAuth
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: Why JSON Endpoints Are Specifically Vulnerable, SQL vs NoSQL Injection Comparison]
+```
+
+Rename mapping: "Vulnerable Line (Exact)" → `## Vulnerable Lines`. "Why JSON
+endpoints are specifically vulnerable" → `## Why It Works` (the SQL vs NoSQL
+comparison table stays as its own optional section right after). There is no
+separate protected-server walkthrough for this attack — skip `## Protected Demo`.
+No `## Credentials` — login is the attack itself, there's no fixed account to document.
+
+---
+
 ### Attack Flow
 
 ```
@@ -465,8 +508,8 @@ npm install
 Three terminals:
 ```
 npm run vulnerable           # :3022
-npm run guide            # :3023
-npm run secure # :3024
+npm run guide                # :3023
+npm run secure                # :3024
 ```
 
 ### Attack Walkthrough

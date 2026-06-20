@@ -39,6 +39,22 @@ NetProbe lets authenticated developers run network diagnostics from the browser:
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+Comments on vulnerable and protected lines are teaching material, not labels.
+Add `// ⚠️ VULNERABLE —` above `exec()` calls and `// ✅ PROTECTED —` above
+`execFile()` calls in the two victim servers (never in `attack-guide-server.js`).
+**Required nuance for command injection:** explain WHY `exec()` is dangerous —
+it spawns a shell, and `;`, `&&`, `|`, `$()` are shell metacharacters the shell
+itself interprets, letting an attacker chain arbitrary additional commands onto
+the intended one. Contrast directly with `execFile()`: it calls the OS directly
+with an argument array, never invoking a shell — so `;`, `&`, `|` are just
+characters inside one argument, not control operators. Also note that
+blocklisting metacharacters on top of `exec()` is not a real fix — only
+`execFile()` removes the shell entirely.
+
+---
+
 ## Port 3037 — Vulnerable NetProbe
 
 ### File: `command-injection/victim-server.js`
@@ -481,6 +497,38 @@ Display this error in red below the Run button.
 ---
 
 ## README at `command-injection/README.md`
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Command Injection Demo — NetProbe
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+## Credentials
+```
+
+Rename mapping: "What this demonstrates" → `## Why It Works`. "Vulnerable line"
+→ `## Vulnerable Lines`. "Attack" (the worked example) folds into
+`## Attack Walkthrough` as numbered steps (login → open the Ping tool → paste
+the payload → observe output). "Fix" → `## The Fix`. "Run the demo" → `## How to
+Run`. "Key technical notes for Cursor" is prompt-authoring guidance, not README
+content — do not include it in the README at all; the relevant facts (OS-specific
+ping flags, exec vs execFile vs spawn, timeout requirement) belong in
+`## Defense Details` instead. No separate protected-server walkthrough — skip
+`## Protected Demo`. Add `## Port Reference` (the Port Layout table above) and
+build a `## Credentials` table from the three demo users (alice/alice123,
+bob/bob123, admin/admin456).
+
+---
 
 ### Attack Flow
 

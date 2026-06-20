@@ -35,6 +35,20 @@ No inline HTML template literals in server files.
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+The `// ⚠️ VULNERABLE —` / `// ✅ PROTECTED —` comments already specified below
+(on the `merge()` and `safeMerge()` functions) are the required depth — multi-line,
+explaining the mechanism, not just labeling it. Preserve that depth exactly;
+never shorten it. **Required nuance for prototype pollution:** the comments must
+make clear that `target['__proto__']` does not create a property named
+`__proto__` — it resolves to `Object.prototype` itself, the shared ancestor of
+every plain object in the process. That is why one HTTP request mutates global
+state for every subsequent request from every user, unlike SQL/NoSQL injection
+(scoped to one query) or XSS (scoped to one victim's browser).
+
+---
+
 ## Files to create
 
 ```
@@ -455,6 +469,31 @@ The prototype status indicator stays green.
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Prototype Pollution Attack Demo — ConfigHub
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+```
+
+Rename mapping: "Setup" → `## How to Run`. "Why This Is Dangerous" → `## Why It
+Works`. The "Defense Details" content (the three-defenses-combined explanation)
+goes in its own section after `## The Fix`, not merged into it. No `## Credentials`
+— this demo has no login form.
+
+---
 
 ### Attack Flow
 

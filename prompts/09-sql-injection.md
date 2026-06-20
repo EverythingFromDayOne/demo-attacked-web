@@ -35,6 +35,23 @@ No inline HTML template literals in server files.
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+Comments on vulnerable and protected lines are teaching material, not labels.
+Each comment must answer: what is wrong/fixed, why it is exploitable/safe, how
+the attack works mechanically, and any nuance a student would miss without
+running the demo. Never shorten an existing detailed comment — only expand it.
+
+**Required nuance for SQL injection:** show the specific attack string inline in
+the comment — `' OR '1'='1` or `admin'--` — rather than describing it abstractly.
+Explain that string concatenation lets the attacker terminate the intended query
+early (with `'` or `--`) and inject new SQL clauses, including `UNION SELECT` to
+pull rows from a completely different table. Contrast explicitly with the fix:
+parameterized queries separate query structure from query data at the driver
+level, so a `'` inside a bound parameter is just a character, never a delimiter.
+
+---
+
 ## Files to create
 
 ```
@@ -342,6 +359,43 @@ it's treated as the literal string `admin'--` and no user has that username.
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# SQL Injection Demo — DevLinks
+
+## Port Reference
+## How to Run
+## Attack Flow
+## Attack Walkthrough
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: SQL vs NoSQL Injection comparison table]
+```
+
+Rename mapping: "Setup" → `## How to Run`. "Vulnerable Lines (Exact)" stays
+`## Vulnerable Lines`. "Why parameterized queries work" → `## Why It Works`.
+The two separate walkthroughs described below ("Data Extraction" and "Login
+Bypass") both belong under one `## Attack Walkthrough` section as two numbered
+subsections. No separate protected-server walkthrough — skip `## Protected Demo`.
+`## Credentials` table at the bottom:
+
+| User | Password | Role |
+|------|----------|------|
+| alice | hunter2 | developer |
+| bob | correct-horse | developer |
+| admin | Adm1nS3cr3t! | admin |
+| carol | letmein | developer |
+
+(These are the seed users — also used as login-bypass demonstration targets via
+`admin'--`. Document both the real credentials and the bypass payload.)
+
+---
 
 ### Attack Flow
 

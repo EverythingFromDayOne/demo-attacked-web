@@ -35,6 +35,21 @@ No inline HTML template literals in server files.
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+The `// ⚠️ VULNERABLE —` comments already specified below (CPU loop, ReDoS
+regex) and the `// ✅` comments on the worker-thread fix are the required depth.
+Preserve them exactly — never shorten. **Required nuance for event loop
+blocking:** the comments and README must explain that when the main thread is
+occupied, ALL concurrent requests — not just the slow one — receive no response
+until the computation finishes; one request starves every other user. Also
+explain explicitly why `setTimeout` cannot help: synchronous code cannot be
+interrupted by a timer callback, because the event loop itself is blocked and
+never reaches the queued timer — only truly async operations (worker threads,
+child processes, native async I/O) keep the event loop free.
+
+---
+
 ## Files to create
 
 ```
@@ -511,6 +526,34 @@ the event loop is never blocked.
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Event Loop Blocking Demo — DevUtils
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+```
+
+Rename mapping: "Setup" → `## How to Run`. The "Why setTimeout alone does not
+help" explanation goes inside `## The Fix` (immediately after the code), not as
+a separate section. "Defense in Depth" table → `## Defense Details`. The
+walkthrough steps below that show the protected server staying responsive
+(steps 3–4, 7–8) become their own `## Protected Demo` section, separated from
+the pure-attack steps in `## Attack Walkthrough`. No `## Credentials` — no login
+form in this demo.
+
+---
 
 ### Attack Flow
 

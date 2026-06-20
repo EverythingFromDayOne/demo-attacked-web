@@ -17,6 +17,69 @@ No inline HTML template literals in server files.
 
 ---
 
+## Global UI Standard — applies to every server in this lab
+
+| Server type | Theme |
+|-------------|-------|
+| Attacker server / Attack guide | Dark terminal aesthetic — exact CSS below. HTML lives in `public/guide.html`, served via `res.sendFile`. |
+| Victim servers | Realistic product UI matching their brand (CloudVault) |
+
+**Note for this attack specifically:** the attacker page (`guide.html`) is disguised
+as a "CloudBoost" promotion — its *visible* content (headline, CTA button, countdown
+timer) keeps the bright promotional styling described below. The dark terminal CSS
+applies to the debug-mode overlay panel and the victim switcher, not the lure itself.
+
+```css
+body {
+  background: #0a0a0a;
+  color: #00ff41;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 2rem;
+  margin: 0;
+}
+.flow-box {
+  background: #0d1a0d;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.credentials-panel {
+  background: #050f05;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+```
+Navigation: fixed bottom-left `target-switcher` only — no other open/link buttons.
+
+---
+
+## Code Comment Standard — educational depth, not one-liners
+
+Comments are teaching material, not labels. Each comment must answer: what is
+wrong/fixed, why it is exploitable/safe, how the attack works mechanically, and
+any nuance a student would miss without running the demo.
+
+**Required nuance for clickjacking:** on the protected side, explain the
+difference between `X-Frame-Options: DENY` (no framing by anyone) and
+`SAMEORIGIN` (framing allowed only from the same origin). Explain that CSP
+`frame-ancestors` supersedes `X-Frame-Options` in all modern browsers and is
+more flexible — it can name multiple allowed origins, where `X-Frame-Options`
+can only express one. Always set both headers for backward compatibility. Also
+explain why the vulnerability is an **absence** (missing header), not a bad
+line of code — comment the route/middleware location where the header should
+have been set, the same way it is documented in the existing
+`// ⚠️ VULNERABILITY: No X-Frame-Options or CSP frame-ancestors header.` comment
+below. Keep this comment's full multi-line explanation — do not shorten it.
+
+---
+
 ## Files to create
 
 ```
@@ -293,6 +356,34 @@ point: JavaScript cannot defend against clickjacking. Only HTTP headers can.
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Clickjacking Attack Demo — CloudVault File Storage
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: Why the Frame-Buster Script Fails]
+```
+
+Rename mapping: "Vulnerable line (exact)" → `## Vulnerable Lines`. "Defense details"
+stays `## Defense Details`. "Why the frame-buster script fails" stays as its own
+optional theory section at the bottom. The numbered attack walkthrough below splits
+into `## How to Run` (steps 1–3) and `## Attack Walkthrough` (steps 4–8); the
+"Protected demo" steps described below go into their own `## Protected Demo`
+section. No `## Credentials` — this demo auto-authenticates, no login form exists.
+
+---
 
 ### Attack Flow
 

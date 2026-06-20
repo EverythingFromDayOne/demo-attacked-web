@@ -19,6 +19,66 @@ No inline HTML template literals in server files.
 
 ---
 
+## Global UI Standard — applies to every server in this lab
+
+| Server type | Theme |
+|-------------|-------|
+| Attack guide (`attack-guide-server.js`, port 3018) | Dark terminal aesthetic — exact CSS below. HTML lives in `public/guide.html`, served via `res.sendFile`. |
+| Internal API server (`internal-server.js`, port 3020) | Muted corporate — `#1a1a2e` bg, `#e2e8f0` text, `#334155` borders, amber (`#fbbf24`) warning line only. This is the SSRF *target*, not an attacker tool — see its detailed spec below. |
+| Victim servers | Realistic product UI matching their brand (DevShare) |
+
+**Attack guide page — exact CSS (use these values, do not paraphrase):**
+```css
+body {
+  background: #0a0a0a;
+  color: #00ff41;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 2rem;
+  margin: 0;
+}
+.flow-box {
+  background: #0d1a0d;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.credentials-panel {
+  background: #050f05;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+```
+The guide page should walk through the attack flow diagram, show the internal
+endpoint list with copy buttons, and provide the fixed bottom-left
+`target-switcher` (Vulnerable :3019 / Protected :3021) — no other open/link
+buttons anywhere on the page.
+
+---
+
+## Code Comment Standard — educational depth, not one-liners
+
+Comments are teaching material, not labels. Each comment must answer: what is
+wrong/fixed, why it is exploitable/safe, how the attack works mechanically, and
+any nuance a student would miss without running the demo.
+
+**Required nuance for SSRF:** on `fetch(url)`, explain that the server makes the
+HTTP request from its own network position — bypassing any firewall or network
+boundary that blocks the browser from reaching internal-only addresses directly.
+Name the real-world target explicitly: the AWS EC2 metadata endpoint
+(`169.254.169.254`) returns IAM credentials for the instance's role with zero
+authentication, reachable from the server but never from a user's browser. This
+is the single most damaging real-world SSRF target and should be named in the
+comment, not just alluded to.
+
+---
+
 ## Files to create
 
 ```
@@ -422,6 +482,37 @@ And render a red blocked banner in the UI:
 
 ## README.md
 
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# SSRF Attack Demo — DevShare Link Preview
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: Why This Attack Is Dangerous, Why the Denylist Is Insufficient — DNS Rebinding,
+ Internal API Endpoints]
+```
+
+Note the Port Reference table needs all 4 servers (3018 guide, 3019 vulnerable,
+3020 internal, 3021 protected) and a callout that port 3018 conflicts with
+reverse-tabnabbing's protected server. Rename mapping: "Vulnerable code (exact)"
+→ `## Vulnerable Lines`. "Defense details" stays `## Defense Details`. "Mental
+model — who is the attacker?" merges into `## Why It Works`. The attack
+walkthrough below splits into `## How to Run` (steps 1–4, starting all servers)
+and `## Attack Walkthrough` (steps 5–8); "Protected demo" becomes its own
+`## Protected Demo` section. No `## Credentials` — no login form in this demo.
+
+---
+
 ### Attack Flow
 
 ```
@@ -441,8 +532,10 @@ Real-world target: http://169.254.169.254/ → AWS IAM credentials
 |------|------|------|
 | 3018 | Attack guide | `attack-guide-server.js` |
 | 3019 | Vulnerable victim (DevShare) | `victim-server.js` |
-| 3020 | Internal API (the target, not the attacker) | `internal-server.js` |
+| 3020 | Internal API (simulated private service) | `internal-server.js` |
 | 3021 | Protected victim (DevShare) | `victim-server-protected.js` |
+
+> ⚠️ Port 3018 conflicts with reverse-tabnabbing's protected server — never run both demos simultaneously.
 
 ### Attack walkthrough
 
@@ -452,10 +545,10 @@ Real-world target: http://169.254.169.254/ → AWS IAM credentials
 4. Terminal 3: `npm run guide` → Attack guide at **localhost:3018**
 5. Open **localhost:3020** — note this is the internal SSRF target, not an attack tool.
 6. Copy `http://localhost:3020/internal/env`.
-6. Open **localhost:3019**, paste the URL into the preview form, click "Generate Preview".
-7. The DevShare server fetches the internal API and returns your fake database
+7. Open **localhost:3019**, paste the URL into the preview form, click "Generate Preview".
+8. The DevShare server fetches the internal API and returns your fake database
    password, JWT secret, and AWS keys in the preview card.
-8. Try `http://localhost:3020/internal/users` — you get the entire user table.
+9. Try `http://localhost:3020/internal/users` — you get the entire user table.
 
 ### Protected demo
 

@@ -39,6 +39,18 @@ PayrollHub lets employees log in and view their payslips. The vulnerable server 
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+The `// ⚠️ Only checks that the user is logged in...` and `// ✅ Ownership
+check...` comments already specified below are the required depth — preserve
+them exactly. **Required nuance for IDOR:** the comment on the protected query
+must note the 404-vs-403 distinction explicitly — returning 403 confirms to the
+attacker that a record exists at that ID (an information leak in itself), while
+404 reveals nothing about whether the ID exists or simply isn't theirs. This is
+a secondary defense-in-depth detail, not just a status-code style choice.
+
+---
+
 ## Port 3040 — Vulnerable PayrollHub
 
 ### File: `idor/victim-server.js`
@@ -578,6 +590,41 @@ When a cross-user ID is requested, show in the UI:
 ---
 
 ## README at `idor/README.md`
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# IDOR Demo — PayrollHub
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+## Credentials
+```
+
+Rename mapping: "What this demonstrates" → `## Why It Works`. "Vulnerable line"
+→ `## Vulnerable Lines`. "The fix" → `## The Fix`. "Run the demo" → `## How to
+Run`. "Key concepts" → `## Defense Details`. The walkthrough below splits: steps
+1–5 (login, fetch own payslip, fetch others', enumerate) go under
+`## Attack Walkthrough`; step 6 (switching to :3042 and confirming 404) becomes
+its own `## Protected Demo` section. `## Credentials` table:
+
+| User | Password | Role |
+|------|----------|------|
+| alice | alice123 | Engineering |
+| bob | bob123 | Engineering |
+| charlie | charlie123 | Management |
+| hr | hr_admin | Human Resources |
+
+---
 
 ### Attack Flow
 

@@ -39,6 +39,21 @@ FileVault lets authenticated users upload and download their own documents. The 
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+The `// ⚠️ VULNERABLE —` / `// ✅` comments already specified below (on
+`path.join()` vs `path.resolve()` + containment check) are the required depth —
+preserve them exactly. **Required nuance for path traversal:** explain that
+`path.join()` normalizes `../` sequences syntactically but does NOT verify the
+result stays inside the intended directory — `uploads/../../package.json`
+collapses to a valid path outside `uploads/`, and `path.join` has no concept of
+a boundary to enforce. `path.resolve()` plus a `startsWith(baseDir + path.sep)`
+check is the actual containment enforcement; the `path.sep` suffix matters too —
+without it, `/uploads-secret/file` would incorrectly pass a check against
+`/uploads`.
+
+---
+
 ## Port 3043 — Vulnerable FileVault
 
 ### File: `path-traversal/victim-server.js`
@@ -414,6 +429,39 @@ When traversal is attempted, show in the UI:
 ---
 
 ## README at `path-traversal/README.md`
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Path Traversal Demo — FileVault
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+## Credentials
+```
+
+Rename mapping: "What this demonstrates" → `## Why It Works`. "Vulnerable line"
+→ `## Vulnerable Lines`. "The fix" → `## The Fix`. "Run" → `## How to Run`.
+"Key technical note" → `## Defense Details`. The walkthrough below splits:
+steps 1–3 (login, fetch package.json, fetch source code) go under
+`## Attack Walkthrough`; step 4 (switching to :3045 and confirming 403) becomes
+its own `## Protected Demo` section. `## Credentials` table:
+
+| User | Password |
+|------|----------|
+| alice | alice123 |
+| bob | bob123 |
+
+---
 
 ### Attack Flow
 

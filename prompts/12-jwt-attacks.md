@@ -36,6 +36,22 @@ No inline HTML template literals in server files.
 
 ---
 
+## Code Comment Standard — educational depth, not one-liners
+
+The `// ⚠️ —` / `// ✅` comments already specified below (on the `verifyToken`
+middleware in both servers) are the required depth. Preserve them exactly —
+never shorten. **Required nuance for JWT attacks — two separate issues:**
+(1) `alg:none` — the attacker controls the `alg` field inside the token header
+itself, so setting it to `"none"` skips signature verification entirely with no
+secret needed at all; the comment must explain that the header is attacker-
+controlled data, never a trust boundary. (2) weak secret — `'secret'` appears in
+any JWT cracking wordlist; once cracked, the attacker can sign arbitrary
+payloads, not just replay an existing token. Also comment clearly on why
+`jwt.decode()` must never substitute for `jwt.verify()` — decode reads the
+payload without checking the signature at all.
+
+---
+
 ## Files to create
 
 ```
@@ -821,6 +837,44 @@ app.use(cors({ origin: 'http://localhost:3035' }));
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# JWT Attacks Demo — AuthVault
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: Logout — JWT Revocation Demo, Why jwt.decode() is dangerous]
+## Credentials
+```
+
+Rename mapping: "Setup" → `## How to Run`. The two walkthroughs below
+("alg:none" and "Weak Secret") both belong under one `## Attack Walkthrough` as
+two numbered subsections. Add a short `## Why It Works` paragraph (signature is
+the only thing preventing tampering; a server that trusts header-supplied `alg`
+or signs with a guessable secret has no real verification) and a
+`## Defense Details` section (algorithm whitelist + strong random secret,
+expanded from the code in `## The Fix`). "Logout — JWT Revocation Demo" and
+"Why jwt.decode() is dangerous" stay as optional sections near the bottom.
+
+`## Credentials` table:
+
+| User | Password | Role |
+|------|----------|------|
+| alice | hunter2 | developer |
+| bob | correct-horse | developer |
+| admin | Adm1nS3cr3t! | admin |
+
+---
 
 ### Attack Flow
 

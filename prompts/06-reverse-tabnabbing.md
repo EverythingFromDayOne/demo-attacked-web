@@ -20,6 +20,43 @@ No inline HTML template literals in server files.
 
 ---
 
+## Global UI Standard — this demo defines the canonical style for the whole lab
+
+| Server type | Theme |
+|-------------|-------|
+| Attacker server / Attack guide | `#0a0a0a` bg, `#00ff41` text, `'Courier New'` font — dark terminal aesthetic. Defined exactly in the `GET /dashboard` section below. |
+| Victim servers | Realistic product UI matching their brand (TechBlog) |
+
+The exact CSS block in `attacker-server.js`'s `GET /dashboard` section (below) is
+the canonical source every other attack demo in this lab copies verbatim. Build it
+exactly as specified there — `.flow-box` and `.credentials-panel` full-width, no
+`max-width` on containers, fixed bottom-left `target-switcher` only.
+
+---
+
+## Code Comment Standard — educational depth, not one-liners
+
+Comments are teaching material, not labels. Each comment must answer: what is
+wrong/fixed, why it is exploitable/safe, how the attack works mechanically, and
+any nuance a student would miss without running the demo.
+
+**Required nuance for reverse tabnabbing:** comment the `<a target="_blank">` line
+in the served HTML directly — explain that `window.opener` gives the new tab a
+live reference back to the original tab, and that the attacker page can read and
+overwrite `window.opener.location` to silently redirect the original tab to a
+phishing clone while the victim reads the new tab. Also comment on the critical
+modern-browser detail: Chrome 88+ and Firefox 79+ silently add implicit
+`noopener` to all `target="_blank"` links — `rel="opener"` must be set explicitly
+to re-enable the attack even on a fully updated browser. This is what makes old
+code, third-party widgets, or pre-2021 libraries dangerous today. For the
+`noopener` vs `noreferrer` distinction (Referer leakage), explain that they block
+two different channels: `noopener` blocks the new tab from reaching back into the
+original tab; `noreferrer` blocks the original tab from sending the Referer header
+forward to the new tab. A page can be safe from tabnabbing (`noopener`) while
+still leaking the full source URL — including query-string tokens — via Referer.
+
+---
+
 ## Files to create
 
 ```
@@ -438,6 +475,39 @@ When the victim clicks from the protected server:
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this order, `---` between every top-level section:
+
+```
+# Reverse Tabnabbing Demo — TechBlog
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Protected Demo
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: Referer Leakage Demo + its own walkthrough/protected-path subsections,
+ Why Modern Browsers Don't Fully Solve This]
+```
+
+Rename mapping: "Vulnerable line (exact)" → `## Vulnerable Lines`. "Defense
+details" stays `## Defense Details`. "Key insight" (the noopener/noreferrer
+comparison block) and "Why modern browsers don't fully solve this" stay as
+optional theory sections near the bottom. The "Attack walkthrough — Reverse
+Tabnabbing" steps below split into `## How to Run` (steps 1–3) and
+`## Attack Walkthrough` (steps 4–10); "Protected demo — Reverse Tabnabbing"
+becomes its own `## Protected Demo` section. The Referer-leakage walkthrough and
+its protected path stay together as one optional "Referer Leakage Demo" section
+near the bottom. No `## Credentials` — the phishing form captures arbitrary
+typed input, there are no fixed demo credentials to document.
+
+---
 
 ### Attack Flow
 

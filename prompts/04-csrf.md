@@ -17,6 +17,69 @@ No inline HTML template literals in server files.
 
 ---
 
+## Global UI Standard — applies to every server in this lab
+
+| Server type | Theme |
+|-------------|-------|
+| Attacker server / Attack guide | Dark terminal aesthetic — exact CSS below. HTML lives in `public/guide.html` / `public/lure.html`, served via `res.sendFile`. |
+| Victim servers | Realistic product UI matching their brand (NetBank) |
+
+**Attacker/guide pages — exact CSS (use these values, do not paraphrase):**
+```css
+body {
+  background: #0a0a0a;
+  color: #00ff41;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 2rem;
+  margin: 0;
+  /* NO max-width. NO centering. Full width. */
+}
+.flow-box {
+  background: #0d1a0d;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.credentials-panel {
+  background: #050f05;
+  border: 1px solid #1a3a1a;
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+```
+Only `<p>` text elements and `<input>` fields may use `max-width`. Navigation: fixed bottom-left `target-switcher` only — no other open/link buttons anywhere on the page. The lure page (`/lure`) keeps its ShopNest-disguise styling for the visible content — the dark terminal CSS applies to the dashboard (`guide.html`) only.
+
+---
+
+## Code Comment Standard — educational depth, not one-liners
+
+Comments on vulnerable and protected lines are teaching material, not labels. Each comment must answer: what is wrong/fixed, why it is exploitable/safe, how the attack works mechanically, and any nuance a student would miss without running the demo.
+
+Bad: `// ⚠️ VULNERABILITY: no CSRF token validation`
+Good:
+```js
+// ⚠️ EXTRA VULNERABILITY: GET endpoint that causes state change.
+//    CSRF via <img> tag — fires with zero JS, zero user clicks.
+//    Real rule: GET requests must NEVER mutate state (HTTP spec).
+```
+
+**Required nuance for CSRF:** on the `SameSite=Strict` fix, explicitly note that on
+localhost all ports share the same "site" — the protection here only demonstrates
+real cross-site blocking against separate domains (e.g. evil.com → bank.com).
+Without this note, a student running the demo locally may think SameSite is
+broken because the cookie still appears to be sent in same-machine testing
+quirks. Also explain why HttpOnly is irrelevant to CSRF: the browser attaches
+cookies automatically regardless of who initiated the request — HttpOnly only
+blocks JavaScript from reading `document.cookie`, which CSRF never needs to do.
+
+---
+
 ## Files to create
 
 ```
@@ -310,6 +373,41 @@ Add a small informational panel below the transfer form:
 ---
 
 ## README.md
+
+### Canonical structure (required — write directly in this order)
+
+Write `README.md` directly in this exact order, with `---` between every top-level
+section. Do not write alternate section names — there is no later restructure pass.
+
+```
+# CSRF Attack Demo — NetBank Wire Transfer
+
+## Port Reference
+## Attack Flow
+## How to Run
+## Attack Walkthrough
+## Vulnerable Lines
+## The Fix
+## Why It Works
+## Defense Details
+[optional: GET-Based CSRF Variant, Why HttpOnly Doesn't Help, This Demo in Real Frameworks]
+## Credentials   ← always last
+```
+
+Rename mapping for the content described below: "Vulnerable lines (exact)" → `## Vulnerable Lines`.
+"Fix explanation" → `## Defense Details`. "Why HttpOnly doesn't help" stays as its own
+optional theory section near the bottom, before `## Credentials`. The numbered attack
+walkthrough below goes under `## How to Run` (steps 1–3, the setup) and `## Attack
+Walkthrough` (steps 4–8, the actual attack). There is no separate protected-server demo
+for this attack — skip `## Protected Demo`.
+
+`## Credentials` table:
+
+| User | Password | Role |
+|------|----------|------|
+| john.doe | password123 | NetBank customer |
+
+---
 
 ### Attack Flow
 
